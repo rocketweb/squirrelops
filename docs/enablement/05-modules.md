@@ -14,43 +14,43 @@ The headline module (AI Deception) is real and deep. Some of the others are matu
 
 ## The seven modules
 
-### 1. HueyDeweyLouie (AI Deception) — the headline, fully real
+### 1. HueyDeweyLouie (AI Deception): the headline, fully real
 
 The v1.0.4 module and the reason most of these conversations are happening. Trains a LoRA decoy persona, ships a two-layer detection pipeline (deterministic rules + DeBERTa-v3 ONNX classifier), and emits signed, reproducible profile bundles that ClownPeanuts runs. This is where the 98.5% (66 of 67 attack turns) and zero-false-positive numbers come from. Deep, tested, and the strongest thing you sell. Everything in `01-architecture.md` and `02-numbers-and-proof.md` is about this module.
 
 **Maturity: production-grade.** Talk about it freely, within the numbers discipline from `02`.
 
-### 2. FunHouseForge (decoy lifecycle orchestrator) — real
+### 2. FunHouseForge (decoy lifecycle orchestrator): real
 
 Stands up, activates, drifts, and tears down deception environments. In practice it is the hub the other modules hang off: it provisions the decoys and chains the supporting modules together. If a buyer asks "how do decoys get deployed and managed," this is the answer.
 
 **Maturity: real.** Manifest-driven, working deploy/activate/reconcile workflows.
 
-### 3. GhostCrew (synthetic activity generator) — real
+### 3. GhostCrew (synthetic activity generator): real
 
 Makes decoys look alive. Generates realistic-looking activity against the decoys (SSH sessions, HTTP requests, DB queries) on scene-based or ambient schedules so an attacker can't tell a decoy from production by watching traffic. A real and underrated differentiator: empty honeypots are obvious; populated ones aren't.
 
 **Maturity: real.** Concrete scene profiles (recon, harvest, lateral, persistence).
 
-### 4. WitchBait (credential canary system) — real
+### 4. WitchBait (credential canary system): real
 
 Plants trackable fake credentials and watches for use. Registers, rotates, and exports canary credentials (CSV/JSON/NDJSON) and records when one trips. Conceptually similar to Thinkst Canarytokens, scoped into the SquirrelOps deception fabric.
 
 **Maturity: real.** Deterministic per-service plan generation, trip telemetry.
 
-### 5. ADLibs (Active Directory deception) — real code, narrower than the name
+### 5. ADLibs (Active Directory deception): real code, narrower than the name
 
 Seeds fake users, service accounts, and groups to detect adversary enumeration of Active Directory. Here is the honest line you must hold: **today it fabricates and tracks AD-shaped decoy objects and ingests the resulting events; it does not yet perform a live LDAP bind into a customer's production AD.** It generates the deception objects and the detection logic around them. Live AD integration is a connector that sits on top.
 
 **Maturity: foundation.** On a call: "ADLibs generates Active Directory deception objects and the detection around them. Wiring them into your live directory is part of deployment scoping." Do not say "it seeds users directly into your production AD" as if that's a turnkey feature today.
 
-### 6. PripyatSprings (data artifact fingerprinting) — real code, narrower than the name
+### 6. PripyatSprings (data artifact fingerprinting): real code, narrower than the name
 
 Fingerprints exported artifacts and tracks callbacks when they're opened outside the environment, plus applies toxicity-level transforms. The honest line: **it maintains the fingerprint registry and the callback-tracking pipeline; it does not yet generate the beaconing documents (the docx/pdf with embedded web-bugs) itself.** It tracks and transforms; the artifact-with-beacon generation is the piece that layers on.
 
 **Maturity: foundation.** On a call: "PripyatSprings fingerprints exported artifacts and tracks when they phone home from outside your environment." Don't imply it auto-generates booby-trapped Office docs today.
 
-### 7. DirtyLaundry (adversary behavioral profiling) — real
+### 7. DirtyLaundry (adversary behavioral profiling): real
 
 Classifies an intruder's skill level and produces adaptive defense recommendations. Uses five weighted behavioral metrics (typing cadence, command vocabulary, tool signatures, temporal pattern, credential reuse) to score a session and bucket the actor from script-kiddie to APT, then exports the profile (native + STIX). This is the "we don't just catch them, we tell you who they are" story.
 

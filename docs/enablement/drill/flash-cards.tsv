@@ -1,0 +1,98 @@
+#separator:tab
+#html:false
+#columns:Front	Back
+#tags:squirrelops-enablement
+What is SquirrelOps in one sentence?	A deception security platform for AI. It sits in front of your customer-facing LLM, routes attackers into a decoy, and sends labeled threat intel to your SIEM.
+What does SquirrelOps do that guardrails don't?	Guardrails block prompts at the door. SquirrelOps catches the attacker who gets through, routes them to a decoy, and tells you how they got in.
+What is the core value proposition?	Most LLM security keeps attackers out. SquirrelOps makes them reveal themselves. Detection and attribution for the LLM attack surface.
+What is the 30-second pitch?	Most LLM security tries to keep attackers out. We make them reveal themselves. We sit in front of your LLM, route attackers to a decoy, capture what they tried, and send labeled intel to your SIEM. Real model stays clean.
+What category is SquirrelOps?	Deception for the LLM attack surface. The intersection of network deception and AI security. A new category, effectively uncontested commercially.
+What is the threat capture rate and what does it mean?	98.5%, meaning 66 of 67 attack turns captured in the v1.0.4 internal adversarial campaign.
+Why must you say "of attack turns" with the 98.5%?	The campaign is 87 total turns; 67 are attacks, 20 benign. 98.5% is 66 of 67 attacks. The raw canary rate across all 87 is 75.86%. Pairing 98.5% with 87 is the trap.
+What do you do when asked "98.5% of what?"	Say 66 of 67 attack turns, then volunteer that the raw rate across all 87 turns is ~76%, and explain the attack-turn number is the meaningful one.
+What is the false positive rate?	Zero on the benign traffic test set. No production numbers yet (pre-customer). Never claim "zero in production."
+What is the detection time?	Under 2 minutes from the first malicious request to alert.
+How much latency does SquirrelOps add?	About 30ms on benign (clean) traffic, below the noise floor of LLM response times.
+How many tests does SquirrelOps have?	815 on the v1.0.5 release branch; over 1,000 across the whole suite.
+How many attack techniques does the campaign cover?	6 technique families across 7 attacker profiles, roughly 120 prompts. Never say "80+ techniques."
+What are the 6 attack technique families?	DAN-style jailbreaks, role-play injection, system-prompt extraction, encoding evasion, tool-call exploitation, and multi-step chains.
+What ML model does Layer 2 use?	A 700MB DeBERTa-v3 model exported to ONNX, shipped inside the profile bundle.
+What is the two-layer detection pipeline?	Layer 1 deterministic regex rules (sub-ms), then Layer 2 ML classifier (DeBERTa-v3 ONNX, 10-30ms). Scores combine via max.
+What happens to adversarial traffic?	It gets routed to a decoy persona model. The real model never sees the attacker.
+What happens to benign traffic?	It passes through to the real model untouched, adding ~30ms.
+What is the decoy persona model?	A LoRA-adapted small open-weight model trained to engage attackers convincingly without leaking real secrets.
+What is a profile bundle?	The signed, reproducible artifact shipping a tenant's rules, ML model, and decoy persona. Customers can rebuild it from source and verify bit-identical.
+What does "bit-identical reproducible build" mean and what is its scope?	Customers rebuild a profile bundle from source and verify it byte-for-byte matches the deployed one. Scope is the bundle pipeline (HueyDeweyLouie), not the control-plane core.
+How is intel emitted?	STIX 2.1 over TAXII2. Standard format, polled by the customer's SIEM or threat-intel platform.
+What are the TAXII2 endpoints?	/taxii2/ discovery, /taxii2/api/ root, /taxii2/api/collections, and /taxii2/api/collections/{id}/objects.
+What STIX object types are emitted?	Indicators (IP, UA, session token), attack-patterns (techniques), and relationships, enriched with ATT&CK and ATLAS.
+What are the three deployment topologies?	In-line gateway, sidecar, and VPC-peered / isolated. All produce identical intel output.
+Which SIEM integration is documented?	OpenCTI, via its TAXII2 connector. Others (Splunk, Sentinel) are standard "point your TAXII2 collector at our feed."
+What does the customer provide to deploy?	A place to run it, traffic routing, a TAXII2-capable SIEM or bridge target, the in-scope models/use cases, and a security contact.
+What is the honest limit on SIEM connectors?	Standard TAXII2 plus a documented OpenCTI path. No universal one-click connector. Custom targets are scoped bridges.
+What does CLOWNPEANUTS_REQUIRE_STAGE2 do?	Makes the runtime fail closed (raise) if a bundle is supposed to ship the ML model but it's missing, instead of silently running rules-only.
+Name the seven modules.	HueyDeweyLouie (AI Deception), FunHouseForge, GhostCrew, WitchBait, ADLibs, PripyatSprings, DirtyLaundry.
+What is HueyDeweyLouie?	The AI Deception module (v1.0.4 headline). LoRA decoy, two-layer detection, signed reproducible bundles. The deepest, most complete module.
+What is FunHouseForge?	The decoy lifecycle orchestrator. Stands up, activates, and tears down deception environments. The hub the other modules hang off.
+What is GhostCrew?	Synthetic activity generator. Makes decoys look alive with realistic SSH/HTTP/DB activity so attackers can't spot them as empty.
+What is WitchBait?	Credential canary system. Plants trackable fake credentials and records when one is used.
+What is the honest line on ADLibs?	It generates Active Directory deception objects and the detection around them today. Live LDAP bind into production AD is deployment scoping, not turnkey yet.
+What is the honest line on PripyatSprings?	It maintains the artifact fingerprint registry and callback tracking. It does not yet generate the beaconing documents themselves.
+What is DirtyLaundry?	Adversary behavioral profiling. Five weighted metrics classify an actor from script-kiddie to APT, exported as native + STIX.
+What is ClownPeanuts?	The runtime engine. Service emulators, the rabbit-hole engine, the detection trap layer, and the STIX/TAXII2 server. The substance of the product.
+What is the honest framing of the SquirrelOps core?	A control plane and aggregator, not a heavyweight brain. The intelligence lives in ClownPeanuts and the AI module.
+Who are the five buyer personas?	CISO, GRC/AI Governance, Head of AppSec, SOC Manager, Head of AI Platform.
+Who are the decision-makers vs evaluators?	Decision-makers: CISO, GRC, sometimes AppSec. Evaluators (can veto): SOC Manager, AI Platform lead.
+Who is the silent veto?	The Head of AI Platform. They can quietly kill a deal by telling the CISO it adds latency/risk. Win them early.
+What do you lead with for a CISO?	The detection-gap story: you have a Protect layer for AI, but what's in the Detect column for your LLMs?
+What do you lead with for a GRC buyer?	The honest framework framing: we slot into Detect/Respond of what you already run, and we publish a quantified number.
+What do you lead with for AppSec?	Architecture and fit: the four layers, ~30ms latency, STIX/TAXII2 into their stack, reproducible bundles they can audit.
+What do you lead with for a SOC Manager?	Signal quality: zero false positives, every alert a real adversarial session with attribution, into the SIEM they already run.
+What do you lead with for AI Platform lead?	Minimal footprint: ~30ms, loads once, benign passes through, real model never sees attackers. "We're a guest, not a tenant."
+How do you sense which persona you're talking to?	By the first thing they probe: risk/board (CISO), frameworks (GRC), the app (AppSec), alerts/noise (SOC), latency/the model (AI Platform).
+Is the LLM-deception category contested?	No commercial product does it. It's been academic research (Palisade's LLM Agent Honeypot). SquirrelOps defines the category.
+What is the IP caution on the category?	A US patent (12423441) exists on generative-LLM deception. Don't claim "first/only" publicly until counsel reviews it. Say "no commercial product we've found."
+How is SquirrelOps different from Lakera?	Lakera is an API filter (now Check Point). It blocks at the door and assumes the block holds. We catch the attacker who beats it.
+How is SquirrelOps different from Acalvio?	Acalvio makes a honeypot WITH AI (LLM generates fake servers). SquirrelOps makes a honeypot that IS an AI (decoy model catching LLM attacks).
+How is SquirrelOps different from HiddenLayer / red-teaming?	They test and harden your model before deployment. We catch the attacker after deployment, in production. Complementary.
+What happened with the AI guardrail vendors?	Consolidated: Lakera to Check Point, Prompt Security to SentinelOne, Protect AI to Palo Alto, Robust Intelligence to Cisco.
+What is the EchoLeak proof point?	CVE-2025-32711, June 2025. Zero-click prompt injection in M365 Copilot that beat Microsoft's own classifier. Proof that filters fail.
+What is the real TAM figure to cite?	Agentic AI security: $1.65B in 2026 growing to $13.5B by 2032, ~42% CAGR (MarketsandMarkets).
+What market gap stat can you cite?	47% of organizations have no AI-specific security controls (Kiteworks 2025).
+Which stats must you NOT cite?	"Prompt injection up 340% YoY" and "88% had an AI-agent incident." Vendor-blog noise, not primary research.
+What is the one-sentence competitive positioning?	Everyone else builds a taller wall around your LLM. We build the room on the other side, where the attacker reveals their playbook.
+What are the three pricing tiers?	Pilot ($50-75K), Mission ($150-250K/yr + impl), Constellation ($400K-$1M+/yr).
+What is the Pilot tier?	$50-75K fixed, 4-6 weeks, single endpoint, credits 100% toward year one.
+What is the Mission tier?	$150-250K/yr platform plus $50-100K implementation. Mid-market, 1-3 endpoints, ~10M queries/mo.
+What is the Constellation tier?	$400K-$1M+/yr. Multi-BU, multi-environment, air-gap, dedicated TAM, custom rule packs.
+What is the core anchoring rule?	Anchor high, quote list, let procurement discount you. Founders undercharge by 40-60% in early enterprise sales.
+How should you NOT price?	Per query. It creates buyer anxiety. Use platform plus envelope.
+How do you handle "this is expensive"?	"Compared to what?" Let them anchor first. Usually they compare to a filter; reframe to deception pricing.
+How do you handle "we'll build it ourselves"?	"12-18 months of engineering: two-layer pipeline, decoy model, signed bundles, 800-test gate, STIX pipeline. What's that worth, plus exposure while you build?"
+What is the lighthouse pricing lever?	First 5 customers get 30-50% off in exchange for case study, reference rights, and co-marketing.
+What are the three pressure reflexes for objections?	Pause then answer in two sentences and stop; agree with the true part first then pivot; if you don't know, defer with a date and never invent.
+How do you handle "you have no customers"?	Agree: lighthouse phase. Turn it: our attention, our roadmap, lighthouse pricing. In a year you're one of fifty. Price it as access.
+How do you handle "isn't this just a honeypot?"	Same proven idea, new surface. Network honeypots are a decade-old trusted category. Ours engages attackers and emits intel; it doesn't just sit there.
+How do you handle "what if the attacker realizes it's a decoy?"	By then they've revealed technique, tooling, and intent. That's the win. GhostCrew also keeps decoys from looking empty.
+How do you handle "does it see our real data?"	The decoy isn't wired to real systems, so it leaks nothing. Benign traffic passes to your model. Deploy in a VPC you control for residency.
+How do you handle "are you SOC 2 / FedRAMP certified?"	Not yet, and I won't pretend. We support your program with evidence and can produce a control-mapping package as an engagement.
+How do you handle "why trust an early vendor?"	Because of what deploys, not who we are. Signed, reproducible bundles you verify yourself. Source-available runtime. Standard STIX. No black box.
+What is the "I don't know" script?	"Good question, I don't want to guess. What I can tell you is [closest thing]. Let me get you the precise answer by [day]." Then follow up.
+What framework framing do you open with for GRC?	AI Deception isn't its own framework. It slots into the Detect and Respond functions of whatever you already run.
+Which NIST CSF controls does SquirrelOps map to?	DE.CM and DE.AE (Detect), RS.AN and RS.CO (Respond).
+Which CIS Control is the gift, and why?	Control 13 (Network Monitoring and Defense). It explicitly calls for deception technology. The framework already asked; we answer it for AI.
+Which NIST AI RMF functions does SquirrelOps support?	Measure and Manage. The quantified metrics exist because the framework asks for evidenced AI risk measurement.
+Which OWASP LLM Top 10 items get captured?	LLM01 Prompt Injection, LLM06 Sensitive Info Disclosure, and adjacent items, categorized at the decoy.
+What compliance must you NOT claim?	SOC 2 Type II, FedRAMP authorization, ISO 27001/42001 certification. These are buyer obligations we support, not vendor certs.
+What is the pilot delivery team and cost?	~228 person-hours over 6 weeks across founder/SE, lead engineer, and a 1099 threat researcher. ~$51K COGS.
+What gates pilot throughput?	The lead-engineer role is near-full-time per pilot. One engineer is ~5-6 pilots/year; two is ~10-12.
+What is the partnership posture?	Complement, not compete. We produce threat intel; SIEMs/TIPs/AI platforms consume it. We extend partners on the LLM surface.
+What is the partnership mental model?	You produce, they consume. SquirrelOps is the sensor; the partner's platform is the workbench/pipeline.
+How do you turn "you're early" into a partnership advantage?	A big vendor makes a partner wait in line. We co-build the integration in weeks, their way, and they get a differentiated AI security story first.
+What is the Flowsint-style integration pattern?	A SquirrelOps enricher the partner's tool calls to pivot from an attacker fingerprint into our capture data. Sensor to workbench.
+What should you never do in a partnership call?	Position as a competitor, oversell the installed base, or commit to roadmap you can't ship.
+What is the deployment timeline by tier?	Pilot 4-6 weeks (one endpoint), Mission 6-8 weeks (production), Constellation 8-12 weeks (white-glove, multi-env).
+What is the honest line on the auth default?	The intel feed can run unauthenticated for local use. A real deployment turns auth on. We added a loud startup warning when it's off.
+Why is the zero-FP claim structurally strong?	A legitimate user never talks to a decoy. If something is in the decoy, it's hostile by construction. That's why the FP number is what it is.
+What is the supply-chain story?	Every bundle is Ed25519-signed and bit-identically reproducible. The customer rebuilds from source and verifies, no trust in our infrastructure required.
+What is SquirrelOps Home and is it enterprise?	A consumer macOS network-security app under a Noncommercial license. Not enterprise. Exclude it from enterprise positioning.

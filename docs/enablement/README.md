@@ -4,12 +4,13 @@ Source corpus for partnership and sales conversations. Optimized for Notebook LM
 
 ## Purpose
 
-Build Matt's command of SquirrelOps to the point where partnership calls and sales conversations can happen unscripted, on the spot, without notes. The docs in this directory are the source material. Notebook LM is the drill harness.
+Build Matt's command of SquirrelOps to the point where partnership calls and sales conversations can happen unscripted, on the spot, without notes. The docs in this directory are the source material. Notebook LM primes you; the `drill/` layer builds the live-call fluency.
 
-Two consumer modes:
+Three consumer modes:
 
 1. **Read directly.** When prepping for a specific conversation, pull the relevant doc and skim. Each is structured for fast scan.
-2. **Feed to Notebook LM.** Sync this directory to Google Drive, point a Notebook LM workspace at it, and generate audio overviews, study guides, FAQs, and Q&A drills. See `NOTEBOOK-LM-GUIDE.md`.
+2. **Feed to Notebook LM.** Sync this directory to Google Drive, point a Notebook LM workspace at it, and generate audio overviews, study guides, FAQs, and Q&A drills. See `NOTEBOOK-LM-GUIDE.md`. This is passive priming.
+3. **Drill with `drill/`.** The active-recall layer: a 94-card Anki deck, glance-able cheat sheets, and six mock call transcripts, with a daily/weekly practice protocol and recorded confidence checkpoints. This is where reading turns into fluency. Start with `drill/README.md`.
 
 ## Contents
 
@@ -28,7 +29,7 @@ Two consumer modes:
 | `10-partnership-talk-track.md` | Complement-not-compete framing for SIEM/TIP/AI-platform partners | Partnership conversations |
 | `11-faq.md` | Catch-all quick answers, cross-referenced to the deep docs | Fast reference and Notebook LM drilling |
 | `NOTEBOOK-LM-GUIDE.md` | How to set up sales-prep and partnership-prep notebooks | Reference |
-| `drill/` | Cheat sheets, flash cards, mock dialogues | Phase 3 (not yet written) |
+| `drill/` | Cheat sheets, 94-card Anki deck, six mock call dialogues, and the daily/weekly drill protocol | Daily practice for live-call fluency |
 
 ## Style and audience
 

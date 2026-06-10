@@ -33,10 +33,10 @@ Use when: sovereignty, data-residency, or air-gap requirements rule out an in-pa
 This is the integration backbone and the most defensible part of the technical story. It is real and implemented in ClownPeanuts.
 
 **The endpoints** (TAXII 2.1 compliant):
-- `/taxii2/` — discovery
-- `/taxii2/api/` — API root (declares `taxii-2.1`)
-- `/taxii2/api/collections` — lists the intel collection (`clownpeanuts-intel`)
-- `/taxii2/api/collections/{id}/objects` — the STIX objects, paginated
+- `/taxii2/`: discovery
+- `/taxii2/api/`: API root (declares `taxii-2.1`)
+- `/taxii2/api/collections`: lists the intel collection (`clownpeanuts-intel`)
+- `/taxii2/api/collections/{id}/objects`: the STIX objects, paginated
 
 **What's in the bundles:** STIX 2.1 indicators (attacker IPs, user agents, session tokens), attack-patterns (techniques observed), and relationships (this indicator used this technique against this decoy). ATT&CK and ATLAS enrichment is applied.
 
