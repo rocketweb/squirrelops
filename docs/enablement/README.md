@@ -20,15 +20,15 @@ Two consumer modes:
 | `02-numbers-and-proof.md` | Every quantified claim with provenance | Any conversation where you cite numbers |
 | `03-framework-alignment.md` | NIST CSF, AI RMF, CIS, OWASP, ATLAS mapping | GRC, compliance, AI governance buyers |
 | `04-pricing.md` | Three-tier model and customization drivers | Commercial conversations |
-| `05-modules.md` | The 7 enterprise modules + core platform | Phase 2 |
-| `06-deployment-integration.md` | SIEM connectors, cloud topology, deployment models | Phase 2 |
-| `07-competitive-landscape.md` | How we differ from Lakera, HiddenLayer, TrapX, etc. | Phase 2 |
-| `08-objections-and-answers.md` | Top 20 buyer objections with rehearsed answers | Phase 2 |
-| `09-buyer-personas.md` | CISO, AppSec, GRC, SOC, AI lead profiles | Phase 2 |
-| `10-partnership-talk-track.md` | Framing SquirrelOps' role in a larger stack | Phase 2 |
-| `11-faq.md` | Catch-all FAQ for everything not covered elsewhere | Phase 2 |
+| `05-modules.md` | The 7 enterprise modules + core, with honest maturity per module | Technical and product-depth conversations |
+| `06-deployment-integration.md` | Topologies, SIEM/TAXII2 integration, latency, prerequisites | Partnership and technical-evaluator calls |
+| `07-competitive-landscape.md` | The category is uncontested; how we sit vs guardrails and deception incumbents | "Who else does this," competitive questions |
+| `08-objections-and-answers.md` | The hard questions with answers and pressure-handling. Read this most. | Drilling before any live call |
+| `09-buyer-personas.md` | CISO, AppSec, GRC, SOC, AI Platform: fears, what to lead with, how to sense which one | Pre-call prep for a known audience |
+| `10-partnership-talk-track.md` | Complement-not-compete framing for SIEM/TIP/AI-platform partners | Partnership conversations |
+| `11-faq.md` | Catch-all quick answers, cross-referenced to the deep docs | Fast reference and Notebook LM drilling |
 | `NOTEBOOK-LM-GUIDE.md` | How to set up sales-prep and partnership-prep notebooks | Reference |
-| `drill/` | Cheat sheets, flash cards, mock dialogues | Phase 3 |
+| `drill/` | Cheat sheets, flash cards, mock dialogues | Phase 3 (not yet written) |
 
 ## Style and audience
 

@@ -32,9 +32,9 @@ For prospect calls. CISOs, AppSec leads, SOC managers, AI platform owners.
 - `02-numbers-and-proof.md`
 - `03-framework-alignment.md`
 - `04-pricing.md`
-- `07-competitive-landscape.md` (when written)
-- `08-objections-and-answers.md` (when written)
-- `09-buyer-personas.md` (when written)
+- `07-competitive-landscape.md`
+- `08-objections-and-answers.md`
+- `09-buyer-personas.md`
 
 **Suggested actions in this notebook:**
 
@@ -54,8 +54,8 @@ For partnership conversations with adjacent vendors. SIEM vendors, SOAR platform
 **Sources to add:**
 - `00-overview.md`
 - `01-architecture.md`
-- `06-deployment-integration.md` (when written)
-- `10-partnership-talk-track.md` (when written)
+- `06-deployment-integration.md`
+- `10-partnership-talk-track.md`
 - Optionally: `04-pricing.md` (only if the conversation is going commercial)
 
 **Suggested actions:**
@@ -74,9 +74,9 @@ For deeper technical conversations with engineers, AppSec teams, or red teams.
 **Sources to add:**
 - `01-architecture.md`
 - `02-numbers-and-proof.md`
-- `05-modules.md` (when written)
-- `06-deployment-integration.md` (when written)
-- `11-faq.md` (when written)
+- `05-modules.md`
+- `06-deployment-integration.md`
+- `11-faq.md`
 
 **Suggested actions:**
 
