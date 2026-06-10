@@ -28,6 +28,8 @@ A 700MB DeBERTa-v3 model exported to ONNX for fast inference. Trained to detect 
 - Threshold tunable per tenant
 - Catches the long tail of novel attacks
 
+The honest detail: Layer 2 ships inside a profile bundle, not in the source repo (the model is large). A bundle built without the model runs Layer 1 only and logs a clear DEGRADED warning. The `CLOWNPEANUTS_REQUIRE_STAGE2` flag makes the runtime fail closed instead of silently dropping to one layer. So when you say "two-layer detection," it's accurate for a production bundle that ships the model. For a customer deployment, confirm the bundle includes Layer 2 or set the require flag.
+
 ### Layer 3. Decoy persona model
 
 When a request gets classified as adversarial, the routing layer hands it off to a decoy persona model instead of the real model. The decoy is a smaller model trained to behave like the real one but to leak nothing real.
@@ -38,11 +40,13 @@ When a request gets classified as adversarial, the routing layer hands it off to
 
 ### Layer 4. Cryptographic signing and reproducibility
 
-Every profile bundle (the rules + ML weights + decoy persona configuration for a specific tenant) is signed at build time. Customers can rebuild any bundle from source and verify it is bit-identical to the deployed artifact.
+Every profile bundle (the rules + model + decoy persona configuration for a specific tenant) is signed at build time by the HueyDeweyLouie bundle pipeline (Ed25519 signing, content-addressed canonical hashing). Customers can rebuild any bundle from source and verify it is bit-identical to the deployed artifact.
 
 - Two verification modes: fast (~15 seconds) and full (~15 minutes)
 - Customer can independently audit what's running in their environment
-- Supply chain integrity guarantee built into the product
+- Supply chain integrity guarantee for the bundle they run
+
+Scope note: this guarantee is about profile bundles, which is what a customer deploys and what they care about. The control-plane aggregator itself is not signed or reproducible, and the claim does not depend on it being so. Say "reproducible profile bundles," not "reproducible platform."
 
 ## Request flow (end-to-end)
 

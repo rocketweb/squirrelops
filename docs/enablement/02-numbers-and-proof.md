@@ -6,17 +6,19 @@ Every quantified claim SquirrelOps makes, with where it comes from and what it r
 
 ### 98.5% threat capture
 
-**What it means.** Of the adversarial prompts in the v1.0.4 canonical adversarial campaign, 98.5% were correctly classified as adversarial and routed to the decoy.
+**What it means.** Of the 67 attack turns in the v1.0.4 internal adversarial campaign, 66 were correctly classified as adversarial and routed to the decoy. 66 of 67 is 98.5%.
 
-**Where it comes from.** The v1.0.4 release gate runs an 87-turn adversarial test campaign covering 80+ distinct techniques. The campaign is built from a combination of:
-- OWASP LLM Top 10 technique exemplars
-- MITRE ATLAS technique exemplars
-- Published adversarial prompt corpora
-- Internal red team contributions
+**Get the denominator right. This is the one that bites you.** The campaign is 87 total turns. The other 20 turns are benign probes, not attacks. So:
+- 66 of 67 **attack** turns captured = 98.5%. This is the real proof point.
+- 66 of 87 **total** turns routed to canary = 75.86%. This is in the raw results file (`canary_rate_pct`).
 
-**What to say if challenged.** "It's a measured number against a defined adversarial campaign, not a marketing estimate. The campaign is reproducible. We can share the methodology under NDA."
+Both numbers are true. They measure different things. Always say "98.5% of attack turns" or "66 of 67 attack turns." Never say "98.5% of the 87-turn campaign." That staples the attack-turn numerator onto the all-turn denominator, and a sharp buyer who then sees the 75.86% canary rate in the report will think you cherry-picked. You did not, but the loose phrasing makes it look that way.
 
-**What NOT to say.** Do not claim 98.5% against "all attacks" or "real-world attacks." It's against our test campaign. The campaign is rigorous, but it's a defined test set.
+**Where it comes from.** `hueydeweylouie/reports/redteam-2026-05-v1_0_4.json`. 21 scenarios across 7 attacker profiles (script-kiddie, curious-researcher, apt-operator, automated-bot, insider, encoder, multilingual-probe). The campaign draws on OWASP LLM Top 10 and MITRE ATLAS technique exemplars plus internal red-team contributions.
+
+**What to say if challenged.** "Of 67 attack turns in our canonical campaign, we captured 66. One miss, by design. Zero false positives on the benign turns in the same run. It's a measured result against a defined campaign, and we can share the methodology under NDA."
+
+**What NOT to say.** Do not claim 98.5% against "all attacks," "real-world attacks," or "the 87-turn campaign." It's 66 of 67 attack turns in a defined internal test set.
 
 ### Zero false positives
 
@@ -45,41 +47,27 @@ Every quantified claim SquirrelOps makes, with where it comes from and what it r
 
 ## Architectural numbers
 
-### 815 tests in the release gate
+### 815 tests
 
-**What it means.** The release gate runs 815 distinct test cases before any new profile bundle is signed and shipped.
+**What it means.** 815 tests pass on the v1.0.5 release branch. This is the number used on the website and in the v1.0.5 changelog.
 
-**Breakdown:**
-- 80+ adversarial techniques tested
-- Benign traffic regression suite
-- Latency benchmarks
-- Reproducibility verification
-- Signature verification
-- TAXII2 endpoint integration tests
-- Layer 1 rule consistency checks
-- Layer 2 ML inference correctness
-- Decoy persona behavior checks
+**Where it comes from.** The v1.0.5 hardening release (2026-05-24, 14 closed audit findings). Attribute it to "the v1.0.5 release branch," not to one module's gate.
+
+**The fuller picture.** Across the whole suite (all eleven repos) there are over 1,000 test functions today: ClownPeanuts ~567, HueyDeweyLouie ~212, PingTing ~164, the six modules ~80 combined. So 815 is conservative against the current total, not inflated. If you want a verifiable line, "more than a thousand tests across the suite" is also true.
 
 **Why it matters.** Says "we ship rigorously." Differentiates from research-grade demos.
 
-### 80+ adversarial techniques in the test suite
+### Adversarial campaign coverage
 
-**What it means.** The adversarial test suite covers 80+ distinct attack technique families.
+**What it means.** The v1.0.4 adversarial campaign exercises 6 attack technique families across 7 attacker profiles, roughly 120 prompts total.
 
-**Coverage areas (roughly):**
-- Prompt injection (direct and indirect)
-- Jailbreak attempts (role-play, scenario-based, persona injection)
-- Encoding tricks (base64, leet, language-switching, Unicode confusables)
-- Data exfiltration probes
-- Function-call hijacking
-- System prompt extraction
-- Model fingerprinting
-- Adversarial suffix attacks
-- Membership inference probes
-- Training data extraction
-- Agent loop manipulation
+**The 6 families** (tags in the corpus): DAN-style jailbreaks, role-play injection, system-prompt extraction, encoding evasion, tool-call exploitation, and multi-step chains. Plus a benign control set.
 
-**Why it matters.** Says "we know the threat model." Reassures technical evaluators.
+**Do not say "80+ techniques."** The website glossary said that and it's being corrected. The defensible statement is "6 technique families across 7 attacker profiles." That's still a serious, structured campaign. Inflating it to 80 invites a "show me the 80" question you can't answer.
+
+**The broader threat model we map to** (in the STIX output, not all directly tested as separate families): OWASP LLM Top 10 categories and MITRE ATLAS techniques. When you want to talk threat-model breadth, talk OWASP and ATLAS coverage. When you want to talk what the campaign tested, it's the 6 families.
+
+**Why it matters.** Says "we know the threat model" without overclaiming the test count.
 
 ### 700MB DeBERTa-v3 ONNX model
 
@@ -89,13 +77,15 @@ Every quantified claim SquirrelOps makes, with where it comes from and what it r
 
 **What to say if challenged on the model choice.** "DeBERTa-v3 is fast and well-suited to classification. We chose it specifically for inference latency. ONNX gives us deployment flexibility across CPU and GPU."
 
+**One caveat to be honest about.** Stage 2 (the ML layer) ships inside a profile bundle. The model is large, so it lives in the bundle, not in the source repo. If a bundle is built without the model, the runtime degrades to stage-1 (deterministic rules) and logs it. We added a `CLOWNPEANUTS_REQUIRE_STAGE2` flag that makes the runtime fail closed rather than silently run rules-only. So "two-layer detection" is accurate for a production bundle that ships the model. Don't imply the ML layer is always-on regardless of how a bundle was built. For a customer deployment, confirm the bundle includes stage 2 (or set the require flag).
+
 ## Reproducibility and supply chain
 
 ### Bit-identical reproducible builds
 
 **What it means.** Customers can rebuild any profile bundle from source and verify the rebuilt artifact is byte-for-byte identical to the deployed bundle.
 
-**How it works.** Build determinism enforced at the orchestration core (squirrelops repo). Inputs (source, dependencies, ML weights) are content-addressed. Build process is reproducible across machines.
+**How it works.** Build determinism is enforced in the HueyDeweyLouie bundle pipeline (Ed25519 signing, content-addressed canonical hashing, normalized tar metadata). Inputs (source, classifier rules, model artifacts) are content-addressed. Scope the claim to profile bundles. The control-plane core (the SquirrelOps aggregator) is not itself signed or reproducible, and nobody needs it to be. The reproducibility guarantee is about the bundle a customer runs, which is exactly what they care about.
 
 **Two verification modes:**
 - Fast (~15 seconds): hashes verify
@@ -153,7 +143,7 @@ As of v1.0.4 we are pre-customer / lighthouse phase. Be careful with phrasing th
 
 Three rules:
 
-1. **Always cite a source.** "98.5% capture across our 87-turn adversarial campaign" beats "we capture 98.5% of attacks."
+1. **Always cite a source.** "98.5%, 66 of 67 attack turns in our internal campaign" beats "we capture 98.5% of attacks." Never pair 98.5% with "87-turn" as the denominator.
 
 2. **Never overshoot.** If you're not sure a number is accurate, don't say it. Say "let me confirm and follow up." Confidence comes from precision, not bluster.
 

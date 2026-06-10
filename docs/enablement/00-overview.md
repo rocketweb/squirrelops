@@ -57,10 +57,10 @@ SquirrelOps is specifically deception for the LLM attack surface. The Venn diagr
 
 For deeper provenance on each number, see `02-numbers-and-proof.md`.
 
-- **98.5% threat capture** against an 87-turn canonical adversarial campaign
+- **98.5% threat capture** (66 of 67 attack turns) in the v1.0.4 internal adversarial campaign. Say "of attack turns," never "of the 87-turn campaign." See `02-numbers-and-proof.md` for why the denominator matters.
 - **Zero false positives** on benign traffic
 - **Under 2 minutes** to detection from first malicious request
-- **815 tests** in the release gate including 80+ techniques in the adversarial test suite
+- **815 tests** pass on the v1.0.5 release branch (over 1,000 across the full suite). The adversarial campaign spans 6 technique families across 7 attacker profiles. Do not say "80+ techniques."
 - **Bit-identical reproducible builds.** Customers can rebuild any profile bundle from source and verify it matches the signed artifact
 - **STIX 2.1 over TAXII2** native output. Drops into Splunk, Sentinel, Chronicle, OpenCTI, Elastic without translation
 

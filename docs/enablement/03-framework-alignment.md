@@ -37,7 +37,7 @@ The Measure and Manage functions are where the proof points sit.
 | Measure 2.10 (Privacy Risk) | Real model never sees adversarial traffic. Attacker can't exfiltrate from a decoy. |
 | Manage 2.3 (Incident Response) | Native STIX 2.1 output integrates into existing incident response workflows. |
 
-**What to say.** "The AI RMF asks for quantified, evidenced risk metrics on AI systems. The 98.5% capture and 0 FP numbers exist precisely because the framework asks for that kind of measurement. We publish ours against an 87-turn adversarial campaign."
+**What to say.** "The AI RMF asks for quantified, evidenced risk metrics on AI systems. The 98.5% capture and 0 FP numbers exist precisely because the framework asks for that kind of measurement. We publish ours: 66 of 67 attack turns captured in our internal adversarial campaign, zero false positives on the benign turns."
 
 ### CIS Controls v8
 
