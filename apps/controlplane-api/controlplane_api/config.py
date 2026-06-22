@@ -2,7 +2,30 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import logging
 import os
+
+logger = logging.getLogger(__name__)
+
+# Tokens this weak are almost always a leftover placeholder from a
+# copy-pasted .env, not a real secret. We refuse to start with one so a
+# deployment can't accidentally ship "changeme" as its bearer token.
+_WEAK_TOKENS = frozenset(
+    {
+        "changeme",
+        "change-me",
+        "password",
+        "secret",
+        "token",
+        "test",
+        "example",
+        "placeholder",
+        "your-token-here",
+        "xxx",
+        "todo",
+    }
+)
+_MIN_TOKEN_LEN = 16
 
 
 def _env_raw(name: str) -> str | None:
@@ -47,6 +70,32 @@ def _parse_bool_env(name: str, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _validate_token(name: str, value: str) -> str:
+    """Reject obviously-unsafe bearer tokens at startup.
+
+    An empty value means auth for that channel is intentionally
+    disabled (local-first dev default). We allow that but log it. A
+    *non-empty* value that is a known placeholder or too short is
+    almost certainly a misconfiguration that would otherwise ship a
+    guessable secret, so we fail closed with an actionable error.
+    """
+    token = value.strip()
+    if not token:
+        return token
+    if token.lower() in _WEAK_TOKENS:
+        raise ValueError(
+            f"{name} is set to a placeholder value ({token!r}). "
+            f"Set a real secret or unset it to disable auth."
+        )
+    if len(token) < _MIN_TOKEN_LEN:
+        raise ValueError(
+            f"{name} is only {len(token)} characters; use at least "
+            f"{_MIN_TOKEN_LEN}. Generate one with "
+            f"`python -c \"import secrets; print(secrets.token_urlsafe(32))\"`."
+        )
+    return token
+
+
 def _parse_origins(raw: str) -> list[str]:
     items = [item.strip() for item in raw.split(",")]
     return [item for item in items if item]
@@ -83,6 +132,22 @@ def load_settings() -> ControlPlaneSettings:
     workspace_root = Path(os.getenv("CONTROLPLANE_WORKSPACE_ROOT", "/Users/matt/code")).expanduser()
     pingting_repo = Path(os.getenv("PINGTING_REPO_PATH", str(workspace_root / "pingting"))).expanduser()
 
+    api_auth_disabled = _parse_bool_env("CONTROLPLANE_API_AUTH_DISABLED", default=False)
+    api_auth_token = _validate_token(
+        "CONTROLPLANE_API_AUTH_TOKEN", _env_str("CONTROLPLANE_API_AUTH_TOKEN", "")
+    )
+    if api_auth_disabled:
+        logger.warning(
+            "control-plane API auth is DISABLED via CONTROLPLANE_API_AUTH_DISABLED=1. "
+            "Run this only on a trusted, loopback-bound interface."
+        )
+    elif not api_auth_token:
+        logger.warning(
+            "control-plane API auth token is not set; the API will reject requests "
+            "with HTTP 503 until CONTROLPLANE_API_AUTH_TOKEN is set (or set "
+            "CONTROLPLANE_API_AUTH_DISABLED=1 for trusted local use)."
+        )
+
     return ControlPlaneSettings(
         repo_root=repo_root,
         workspace_root=workspace_root,
@@ -90,7 +155,9 @@ def load_settings() -> ControlPlaneSettings:
             os.getenv("CONTROLPLANE_PROJECTS_CONFIG", str(repo_root / "config" / "projects.yaml"))
         ).expanduser(),
         clownpeanuts_api_base=os.getenv("CLOWNPEANUTS_API_BASE", "http://127.0.0.1:8099").strip(),
-        clownpeanuts_api_token=os.getenv("CLOWNPEANUTS_API_TOKEN", "").strip(),
+        clownpeanuts_api_token=_validate_token(
+            "CLOWNPEANUTS_API_TOKEN", os.getenv("CLOWNPEANUTS_API_TOKEN", "")
+        ),
         clownpeanuts_ws_events_url=os.getenv(
             "CLOWNPEANUTS_WS_EVENTS_URL",
             "ws://127.0.0.1:8099/ws/events",
@@ -99,9 +166,10 @@ def load_settings() -> ControlPlaneSettings:
             "CLOWNPEANUTS_WS_THEATER_URL",
             "ws://127.0.0.1:8099/ws/theater/live",
         ).strip(),
-        clownpeanuts_ws_token=(
-            os.getenv("CLOWNPEANUTS_WS_TOKEN", "").strip()
-            or os.getenv("CLOWNPEANUTS_API_TOKEN", "").strip()
+        clownpeanuts_ws_token=_validate_token(
+            "CLOWNPEANUTS_WS_TOKEN",
+            os.getenv("CLOWNPEANUTS_WS_TOKEN", "")
+            or os.getenv("CLOWNPEANUTS_API_TOKEN", ""),
         ),
         pingting_repo_path=pingting_repo,
         pingting_status_path=Path(
@@ -135,6 +203,6 @@ def load_settings() -> ControlPlaneSettings:
                 "http://127.0.0.1:4317,http://localhost:4317,http://127.0.0.1:3001,http://localhost:3001,http://127.0.0.1:3000,http://localhost:3000",
             )
         ),
-        api_auth_token=_env_str("CONTROLPLANE_API_AUTH_TOKEN", "").strip(),
-        api_auth_disabled=_parse_bool_env("CONTROLPLANE_API_AUTH_DISABLED", default=False),
+        api_auth_token=api_auth_token,
+        api_auth_disabled=api_auth_disabled,
     )
