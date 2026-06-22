@@ -49,8 +49,15 @@ docker build -f apps/controlplane-api/Dockerfile -t squirrelops-controlplane-api
 - `PINGTING_PYTHON_BIN` (optional explicit Python executable)
 - `PINGTING_STATUS_MAX_AGE_SECONDS` (default: `120`)
 - `PINGTING_STATUS_TIMEOUT_SECONDS` (default: `20`)
-- `CONTROLPANE_API_AUTH_TOKEN` (shared API token; when unset the API fails closed and returns 503)
-- `CONTROLPANE_API_AUTH_DISABLED` (set to `1` to intentionally run without auth, trusted local use only)
-- `CONTROLPANE_CORS_ALLOW_ORIGINS` (comma-separated origins)
-- `CONTROLPANE_ACTION_TIMEOUT_SECONDS` (default: `900`)
-- `CONTROLPANE_BOOTSTRAP_SCRIPT_PATH` (default: `scripts/bootstrap_repos.sh`)
+- `CONTROLPLANE_API_AUTH_TOKEN` (shared API token; when unset the API fails closed and returns 503)
+- `CONTROLPLANE_API_AUTH_DISABLED` (set to `1` to intentionally run without auth, trusted local use only)
+- `CONTROLPLANE_CORS_ALLOW_ORIGINS` (comma-separated origins)
+- `CONTROLPLANE_ACTION_TIMEOUT_SECONDS` (default: `900`)
+- `CONTROLPLANE_ACTION_STATE_PATH` (default: `data/controlplane/actions-state.json`)
+- `CONTROLPLANE_BOOTSTRAP_SCRIPT_PATH` (default: `scripts/bootstrap_repos.sh`)
+- `CONTROLPLANE_SMOKE_SCRIPT_PATH` (default: `harness/smoke.sh`)
+- `CONTROLPLANE_UPDATE_SCRIPT_PATH` (default: `scripts/update_repos.sh`)
+
+> The control-plane variables were previously misspelled `CONTROLPANE_*` (missing
+> the second "L"). Those legacy names still work as deprecated aliases, but the
+> canonical `CONTROLPLANE_*` spelling above takes precedence and should be used.

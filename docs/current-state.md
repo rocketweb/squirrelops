@@ -167,10 +167,24 @@ When `CONTROLPANE_API_AUTH_TOKEN` is set:
 
 CORS behavior:
 
-- enabled when `CONTROLPANE_CORS_ALLOW_ORIGINS` resolves to non-empty list
+- enabled when `CONTROLPLANE_CORS_ALLOW_ORIGINS` resolves to non-empty list
 - `allow_credentials=False`
 - `allow_methods=["*"]`
 - `allow_headers=["*"]`
+
+> Environment variable spelling: the canonical control-plane prefix is
+> `CONTROLPLANE_`. The previously shipped misspelling `CONTROLPANE_` still works
+> as a deprecated alias but should not be used in new configuration.
+
+Dashboard token handling:
+
+- The dashboard makes all REST calls to a same-origin server route (`/api/cp/*`)
+  that injects the control-plane token from a server-only env var
+  (`CONTROLPLANE_API_TOKEN`). The token is never included in the client bundle.
+- WebSocket streams connect directly to the API. Because browsers cannot set
+  headers on WebSocket connections, enabling the live stream requires a
+  client-visible token (`NEXT_PUBLIC_CONTROLPLANE_WS_TOKEN`). It is opt-in: when
+  unset, the dashboard falls back to REST polling through the authenticated BFF.
 
 ## 5. Current data flow
 
