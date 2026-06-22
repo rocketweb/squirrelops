@@ -4,9 +4,15 @@ services:
       context: .
       dockerfile: apps/controlplane-api/Dockerfile
     ports:
-      - "8199:8199"
+      # Bind to loopback only. The API can trigger local scripts and proxies an
+      # authenticated upstream, so it must not be reachable off-host by default.
+      - "127.0.0.1:8199:8199"
     environment:
       CONTROLPLANE_WORKSPACE_ROOT: /Users/matt/code
+      # Required for auth. The API fails closed (HTTP 503) when this is empty,
+      # unless CONTROLPANE_API_AUTH_DISABLED is set to 1 for trusted local use.
+      CONTROLPANE_API_AUTH_TOKEN: ${CONTROLPANE_API_AUTH_TOKEN:-}
+      CONTROLPANE_API_AUTH_DISABLED: ${CONTROLPANE_API_AUTH_DISABLED:-}
       CLOWNPEANUTS_API_BASE: http://host.docker.internal:8099
       CLOWNPEANUTS_WS_EVENTS_URL: ws://host.docker.internal:8099/ws/events
       CLOWNPEANUTS_WS_THEATER_URL: ws://host.docker.internal:8099/ws/theater/live
@@ -14,7 +20,10 @@ services:
       PINGTING_STATUS_PATH: /Users/matt/code/pingting/data/status.json
       PINGTING_CONFIG_PATH: /Users/matt/code/pingting/config/pingting.yaml
     volumes:
-      - /Users/matt/code:/Users/matt/code
+      # Mount only the managed runtime repos rather than the whole workspace so a
+      # container compromise cannot reach unrelated files under the home tree.
+      - /Users/matt/code/pingting:/Users/matt/code/pingting
+      - /Users/matt/code/clownpeanuts:/Users/matt/code/clownpeanuts
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped

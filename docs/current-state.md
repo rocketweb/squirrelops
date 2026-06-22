@@ -144,23 +144,26 @@ Current behavior:
 
 ## 4. API auth, CORS, and websocket token handling
 
-Current auth model is optional and token-based.
+The auth model is token-based and **fails closed**.
 
 When `CONTROLPANE_API_AUTH_TOKEN` is unset:
 
-- API routes are unauthenticated.
+- API routes (other than `/health` and `OPTIONS` preflight) return HTTP `503`.
+- To intentionally run without auth (trusted local use only), set
+  `CONTROLPANE_API_AUTH_DISABLED=1`. This is the only way auth is skipped.
 
 When `CONTROLPANE_API_AUTH_TOKEN` is set:
 
-- HTTP requests require matching token from one of:
+- HTTP requests require a matching token (constant-time compared) from one of:
   - `Authorization: Bearer <token>`
   - `X-API-Key: <token>`
-  - `?token=<token>` query parameter
+  - HTTP query-string tokens are **not** accepted (they leak into logs and history).
 - `OPTIONS` and `/health` are exempt.
-- websocket routes require matching token from:
+- websocket routes require a matching token from:
   - bearer header
   - `X-API-Key`
-  - query token keys (`token`, `api_key`, `access_token`)
+  - query token keys (`token`, `api_key`, `access_token`). These are retained
+    because browsers cannot set headers on WebSocket connections.
 
 CORS behavior:
 

@@ -24,6 +24,10 @@ jobs:
         run: pip install -r ./apps/controlplane-api/requirements.txt
 
       - name: Run control-plane API self-check
+        env:
+          # The self-check exercises endpoint wiring, not auth. Opt out of
+          # fail-closed auth explicitly so the unauthenticated probes succeed.
+          CONTROLPANE_API_AUTH_DISABLED: "1"
         run: |
           python - <<'PY'
           import sys

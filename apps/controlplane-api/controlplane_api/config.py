@@ -15,6 +15,13 @@ def _parse_int_env(name: str, default: int) -> int:
         return default
 
 
+def _parse_bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _parse_origins(raw: str) -> list[str]:
     items = [item.strip() for item in raw.split(",")]
     return [item for item in items if item]
@@ -43,6 +50,7 @@ class ControlPlaneSettings:
     update_script_path: Path
     cors_allow_origins: list[str]
     api_auth_token: str
+    api_auth_disabled: bool
 
 
 def load_settings() -> ControlPlaneSettings:
@@ -103,4 +111,5 @@ def load_settings() -> ControlPlaneSettings:
             )
         ),
         api_auth_token=os.getenv("CONTROLPANE_API_AUTH_TOKEN", "").strip(),
+        api_auth_disabled=_parse_bool_env("CONTROLPANE_API_AUTH_DISABLED", default=False),
     )

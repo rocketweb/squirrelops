@@ -19,7 +19,7 @@ const productionOnlyHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https: wss: http://127.0.0.1:8099 http://localhost:8099 ws://127.0.0.1:8099 ws://localhost:8099 http://127.0.0.1:8199 http://localhost:8199 ws://127.0.0.1:8199 ws://localhost:8199",
+      "connect-src 'self' http://127.0.0.1:8099 http://localhost:8099 ws://127.0.0.1:8099 ws://localhost:8099 http://127.0.0.1:8199 http://localhost:8199 ws://127.0.0.1:8199 ws://localhost:8199",
       "object-src 'none'",
       "base-uri 'self'",
       "frame-ancestors 'none'",
