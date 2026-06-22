@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+import hmac
 from pathlib import Path
 import sys
 from typing import Any
@@ -27,6 +28,13 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _token_matches(provided: str | None, expected: str) -> bool:
+    """Constant-time comparison that fails closed on empty/missing tokens."""
+    if not provided or not expected:
+        return False
+    return hmac.compare_digest(provided, expected)
+
+
 def _extract_bearer_token(raw_value: str | None) -> str | None:
     if raw_value is None:
         return None
@@ -41,17 +49,14 @@ def _extract_bearer_token(raw_value: str | None) -> str | None:
 
 
 def _resolve_request_token(request: Request) -> str | None:
+    # HTTP callers must use headers. Query-string tokens are rejected here because
+    # they leak into access logs, browser history, and Referer headers.
     bearer = _extract_bearer_token(request.headers.get("authorization"))
     if bearer:
         return bearer
     api_key = request.headers.get("x-api-key")
     if api_key:
         token = api_key.strip()
-        if token:
-            return token
-    token_query = request.query_params.get("token")
-    if token_query:
-        token = token_query.strip()
         if token:
             return token
     return None
@@ -119,9 +124,13 @@ def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
         )
 
     async def relay_deception_websocket(*, websocket: WebSocket, upstream_url: str) -> None:
-        if settings.api_auth_token and _resolve_websocket_token(websocket) != settings.api_auth_token:
-            await websocket.close(code=4401, reason="authentication required")
-            return
+        if not settings.api_auth_disabled:
+            if not settings.api_auth_token:
+                await websocket.close(code=4503, reason="server auth not configured")
+                return
+            if not _token_matches(_resolve_websocket_token(websocket), settings.api_auth_token):
+                await websocket.close(code=4401, reason="authentication required")
+                return
 
         await websocket.accept()
         upstream_token = settings.clownpeanuts_ws_token
@@ -153,14 +162,28 @@ def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def auth_middleware(request: Request, call_next: Any) -> Response:
-        if not settings.api_auth_token:
-            return await call_next(request)
+        # CORS preflight and the unauthenticated health probe always pass.
         if request.method.upper() == "OPTIONS":
             return await call_next(request)
         if request.url.path == "/health":
             return await call_next(request)
-        token = _resolve_request_token(request)
-        if token != settings.api_auth_token:
+        # Fail closed: authentication may only be skipped when an operator has
+        # explicitly opted out via CONTROLPANE_API_AUTH_DISABLED. An unset token
+        # is treated as a misconfiguration, not as "allow everyone".
+        if settings.api_auth_disabled:
+            return await call_next(request)
+        if not settings.api_auth_token:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": (
+                        "server authentication is not configured; set "
+                        "CONTROLPANE_API_AUTH_TOKEN, or set "
+                        "CONTROLPANE_API_AUTH_DISABLED=1 to run without auth"
+                    )
+                },
+            )
+        if not _token_matches(_resolve_request_token(request), settings.api_auth_token):
             return JSONResponse(
                 status_code=401,
                 content={"detail": "authentication required"},
