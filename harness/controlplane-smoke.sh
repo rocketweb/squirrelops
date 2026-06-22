@@ -2,7 +2,8 @@
 set -euo pipefail
 
 API_BASE="${1:-http://127.0.0.1:8199}"
-TOKEN="${CONTROLPANE_API_AUTH_TOKEN:-}"
+# Prefer the canonical spelling; fall back to the deprecated misspelled name.
+TOKEN="${CONTROLPLANE_API_AUTH_TOKEN:-${CONTROLPANE_API_AUTH_TOKEN:-}}"
 
 request() {
   local path="$1"

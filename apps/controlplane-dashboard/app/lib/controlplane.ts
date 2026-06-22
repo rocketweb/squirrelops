@@ -1,19 +1,9 @@
-const CONTROLPLANE_API_BASE = process.env.NEXT_PUBLIC_CONTROLPANE_API ?? "http://127.0.0.1:8199"
-const CONTROLPLANE_API_TOKEN = (process.env.NEXT_PUBLIC_CONTROLPANE_API_TOKEN ?? "").trim()
-
-const withControlPlaneHeaders = (headers?: HeadersInit): Headers => {
-  const merged = new Headers(headers)
-  if (CONTROLPLANE_API_TOKEN && !merged.has("Authorization") && !merged.has("X-API-Key")) {
-    merged.set("Authorization", `Bearer ${CONTROLPLANE_API_TOKEN}`)
-  }
-  return merged
-}
-
+// REST calls go through the same-origin BFF at /api/cp/*, which injects the
+// control-plane auth token server-side (see app/api/cp/[...slug]/route.ts).
+// No control-plane token is exposed to the browser.
 const controlplaneFetch = (path: string, init?: RequestInit): Promise<Response> => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`
-  const nextInit = { ...(init ?? {}) }
-  nextInit.headers = withControlPlaneHeaders(init?.headers)
-  return fetch(`${CONTROLPLANE_API_BASE}${normalizedPath}`, nextInit)
+  return fetch(`/api/cp${normalizedPath}`, init)
 }
 
-export { CONTROLPLANE_API_BASE, controlplaneFetch }
+export { controlplaneFetch }

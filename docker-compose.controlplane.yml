@@ -10,9 +10,9 @@ services:
     environment:
       CONTROLPLANE_WORKSPACE_ROOT: /Users/matt/code
       # Required for auth. The API fails closed (HTTP 503) when this is empty,
-      # unless CONTROLPANE_API_AUTH_DISABLED is set to 1 for trusted local use.
-      CONTROLPANE_API_AUTH_TOKEN: ${CONTROLPANE_API_AUTH_TOKEN:-}
-      CONTROLPANE_API_AUTH_DISABLED: ${CONTROLPANE_API_AUTH_DISABLED:-}
+      # unless CONTROLPLANE_API_AUTH_DISABLED is set to 1 for trusted local use.
+      CONTROLPLANE_API_AUTH_TOKEN: ${CONTROLPLANE_API_AUTH_TOKEN:-}
+      CONTROLPLANE_API_AUTH_DISABLED: ${CONTROLPLANE_API_AUTH_DISABLED:-}
       CLOWNPEANUTS_API_BASE: http://host.docker.internal:8099
       CLOWNPEANUTS_WS_EVENTS_URL: ws://host.docker.internal:8099/ws/events
       CLOWNPEANUTS_WS_THEATER_URL: ws://host.docker.internal:8099/ws/theater/live
@@ -32,10 +32,18 @@ services:
     build:
       context: ./apps/controlplane-dashboard
     ports:
-      - "4317:4317"
+      - "127.0.0.1:4317:4317"
     environment:
-      NEXT_PUBLIC_CONTROLPANE_API: http://127.0.0.1:8199
-      NEXT_PUBLIC_CONTROLPANE_WS: ws://127.0.0.1:8199
+      # Server-side BFF target. The dashboard server (not the browser) reaches the
+      # API over the compose network and injects the token, so it never ships to
+      # the client. Keep this in sync with the API's CONTROLPANE_API_AUTH_TOKEN.
+      CONTROLPLANE_API_INTERNAL_BASE: http://controlplane-api:8199
+      CONTROLPLANE_API_TOKEN: ${CONTROLPLANE_API_AUTH_TOKEN:-}
+      # The live WebSocket stream is opt-in and, by browser limitation, uses a
+      # client-visible token. Leave unset to keep all secrets off the client (the
+      # dashboard falls back to REST polling). Set NEXT_PUBLIC_CONTROLPLANE_WS_TOKEN
+      # to the API token to enable it.
+      NEXT_PUBLIC_CONTROLPLANE_WS: ws://127.0.0.1:8199
     depends_on:
       - controlplane-api
     restart: unless-stopped

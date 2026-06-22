@@ -5,8 +5,33 @@ from pathlib import Path
 import os
 
 
+def _env_raw(name: str) -> str | None:
+    """Read an env var, preferring the canonical name.
+
+    The control-plane variables were historically misspelled "CONTROLPANE_"
+    (missing the second "L"). The correct "CONTROLPLANE_" spelling is now
+    canonical; the misspelled name is still honored as a deprecated alias so
+    "fixing the typo" can never silently change behavior (for example, leaving
+    authentication unconfigured).
+    """
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    if name.startswith("CONTROLPLANE_"):
+        legacy = "CONTROLPANE_" + name[len("CONTROLPLANE_"):]
+        legacy_value = os.getenv(legacy)
+        if legacy_value is not None:
+            return legacy_value
+    return None
+
+
+def _env_str(name: str, default: str) -> str:
+    value = _env_raw(name)
+    return value if value is not None else default
+
+
 def _parse_int_env(name: str, default: int) -> int:
-    raw = os.getenv(name)
+    raw = _env_raw(name)
     if raw is None:
         return default
     try:
@@ -16,7 +41,7 @@ def _parse_int_env(name: str, default: int) -> int:
 
 
 def _parse_bool_env(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
+    raw = _env_raw(name)
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
@@ -89,27 +114,27 @@ def load_settings() -> ControlPlaneSettings:
         pingting_status_max_age_seconds=_parse_int_env("PINGTING_STATUS_MAX_AGE_SECONDS", 120),
         pingting_command_timeout_seconds=_parse_int_env("PINGTING_STATUS_TIMEOUT_SECONDS", 20),
         orchestration_state_path=Path(
-            os.getenv(
-                "CONTROLPANE_ACTION_STATE_PATH",
+            _env_str(
+                "CONTROLPLANE_ACTION_STATE_PATH",
                 str(repo_root / "data" / "controlplane" / "actions-state.json"),
             )
         ).expanduser(),
-        orchestration_action_timeout_seconds=_parse_int_env("CONTROLPANE_ACTION_TIMEOUT_SECONDS", 900),
+        orchestration_action_timeout_seconds=_parse_int_env("CONTROLPLANE_ACTION_TIMEOUT_SECONDS", 900),
         bootstrap_script_path=Path(
-            os.getenv("CONTROLPANE_BOOTSTRAP_SCRIPT_PATH", str(repo_root / "scripts" / "bootstrap_repos.sh"))
+            _env_str("CONTROLPLANE_BOOTSTRAP_SCRIPT_PATH", str(repo_root / "scripts" / "bootstrap_repos.sh"))
         ).expanduser(),
         smoke_script_path=Path(
-            os.getenv("CONTROLPANE_SMOKE_SCRIPT_PATH", str(repo_root / "harness" / "smoke.sh"))
+            _env_str("CONTROLPLANE_SMOKE_SCRIPT_PATH", str(repo_root / "harness" / "smoke.sh"))
         ).expanduser(),
         update_script_path=Path(
-            os.getenv("CONTROLPANE_UPDATE_SCRIPT_PATH", str(repo_root / "scripts" / "update_repos.sh"))
+            _env_str("CONTROLPLANE_UPDATE_SCRIPT_PATH", str(repo_root / "scripts" / "update_repos.sh"))
         ).expanduser(),
         cors_allow_origins=_parse_origins(
-            os.getenv(
-                "CONTROLPANE_CORS_ALLOW_ORIGINS",
+            _env_str(
+                "CONTROLPLANE_CORS_ALLOW_ORIGINS",
                 "http://127.0.0.1:4317,http://localhost:4317,http://127.0.0.1:3001,http://localhost:3001,http://127.0.0.1:3000,http://localhost:3000",
             )
         ),
-        api_auth_token=os.getenv("CONTROLPANE_API_AUTH_TOKEN", "").strip(),
-        api_auth_disabled=_parse_bool_env("CONTROLPANE_API_AUTH_DISABLED", default=False),
+        api_auth_token=_env_str("CONTROLPLANE_API_AUTH_TOKEN", "").strip(),
+        api_auth_disabled=_parse_bool_env("CONTROLPLANE_API_AUTH_DISABLED", default=False),
     )
