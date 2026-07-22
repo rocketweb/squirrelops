@@ -26,3 +26,8 @@ jobs:
 
       - name: Run cross-repo smoke harness
         run: ./harness/smoke.sh "${RUNNER_TEMP}/agent-repos"
+
+      - name: Build and exercise the Docker control plane
+        env:
+          SQUIRRELOPS_WORKSPACE: ${{ runner.temp }}/agent-repos
+        run: ./harness/controlplane-docker-smoke.sh

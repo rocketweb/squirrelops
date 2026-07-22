@@ -63,4 +63,4 @@ jobs:
       - name: Check control-plane scripts syntax
         run: |
           bash -n ./scripts/controlplane/start_api.sh ./scripts/controlplane/start_dashboard.sh ./scripts/controlplane/start_dev.sh ./scripts/controlplane/install_launch_agent.sh ./scripts/controlplane/uninstall_launch_agent.sh
-          bash -n ./harness/controlplane-smoke.sh
+          bash -n ./harness/controlplane-smoke.sh ./harness/controlplane-docker-smoke.sh

@@ -291,6 +291,10 @@ Current default assumptions in compose:
 - workspace root bind mount: the parent directory containing SquirrelOps (override with `SQUIRRELOPS_WORKSPACE`)
 - ClownPeanuts upstream reachable from container via `host.docker.internal:8099`
 - PingTing repo/data mounted/read from the sibling `pingting` checkout
+- PingTing's pinned requirements loaded through a named Docker build context
+- container `appuser` UID/GID mapped at startup to the mounted PingTing checkout owner, then privileges dropped before the API starts
+- explicit in-image Python selected for PingTing CLI refreshes; host virtualenvs are never executed in the Linux container
+- startup fails closed for root-owned PingTing mounts or inaccessible config/status/data/log paths
 - published ports:
   - dashboard `4317`
   - API `8199`
@@ -305,6 +309,8 @@ Current workflows:
 Current CI responsibilities:
 
 - validate runtime repo bootstrap + smoke
+- build and exercise the Docker control plane against the bootstrapped PingTing checkout
+- force a live PingTing CLI status refresh and verify container UID/GID mapping
 - validate control-plane API endpoint self-checks
 - validate control-plane dashboard build
 - syntax-check control-plane scripts and harness

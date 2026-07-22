@@ -9,6 +9,8 @@ services:
     build:
       context: .
       dockerfile: apps/controlplane-api/Dockerfile
+      additional_contexts:
+        pingting: ${SQUIRRELOPS_WORKSPACE:-..}/pingting
     ports:
       # Bind to loopback only. The API can trigger local scripts and proxies an
       # authenticated upstream, so it must not be reachable off-host by default.
@@ -25,6 +27,9 @@ services:
       PINGTING_REPO_PATH: /workspace/pingting
       PINGTING_STATUS_PATH: /workspace/pingting/data/status.json
       PINGTING_CONFIG_PATH: /workspace/pingting/config/pingting.yaml
+      # Never select a host virtualenv from the bind mount. The image installs
+      # PingTing's exact requirements and uses its own Linux interpreter.
+      PINGTING_PYTHON_BIN: /usr/local/bin/python
     volumes:
       # Mount only the managed runtime repos rather than the whole workspace so a
       # container compromise cannot reach unrelated files. SQUIRRELOPS_WORKSPACE

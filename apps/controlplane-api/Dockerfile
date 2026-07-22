@@ -5,8 +5,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /opt/controlplane
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY apps/controlplane-api/requirements.txt ./apps/controlplane-api/requirements.txt
-RUN pip install --no-cache-dir -r ./apps/controlplane-api/requirements.txt
+COPY --from=pingting requirements.txt ./apps/controlplane-api/requirements-pingting.txt
+RUN pip install --no-cache-dir \
+    -r ./apps/controlplane-api/requirements.txt \
+    -r ./apps/controlplane-api/requirements-pingting.txt
 
 COPY adapters ./adapters
 COPY config ./config
@@ -17,7 +24,7 @@ COPY apps/controlplane-api ./apps/controlplane-api
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser && \
     chown -R appuser:appgroup /opt/controlplane
 
-USER appuser
+ENTRYPOINT ["/opt/controlplane/apps/controlplane-api/docker-entrypoint.sh"]
 WORKDIR /opt/controlplane/apps/controlplane-api
 
 EXPOSE 8199

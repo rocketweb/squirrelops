@@ -31,8 +31,17 @@ The API listens on `http://127.0.0.1:8199` by default.
 Container image build (from repository root):
 
 ```bash
-docker build -f apps/controlplane-api/Dockerfile -t squirrelops-controlplane-api .
+docker buildx build \
+  --build-context pingting=../pingting \
+  -f apps/controlplane-api/Dockerfile \
+  -t squirrelops-controlplane-api \
+  --load \
+  .
 ```
+
+The PingTing build context supplies its pinned runtime requirements. For normal local operation, prefer `docker compose -f docker-compose.controlplane.yml up --build`; compose wires this context automatically from `SQUIRRELOPS_WORKSPACE`.
+
+The container starts as root only long enough to map `appuser` to the numeric UID/GID owning the mounted PingTing checkout, then uses `gosu` to run the API unprivileged. It fails startup if the checkout is root-owned or the mapped user cannot read PingTing config/status and write the `data/` and `logs/` directories required by the CLI fallback.
 
 ## Environment variables
 
@@ -46,7 +55,7 @@ docker build -f apps/controlplane-api/Dockerfile -t squirrelops-controlplane-api
 - `PINGTING_REPO_PATH` (default: `$CONTROLPLANE_WORKSPACE_ROOT/pingting`)
 - `PINGTING_STATUS_PATH` (default: `$PINGTING_REPO_PATH/data/status.json`)
 - `PINGTING_CONFIG_PATH` (default: `$PINGTING_REPO_PATH/config/pingting.yaml`)
-- `PINGTING_PYTHON_BIN` (optional explicit Python executable)
+- `PINGTING_PYTHON_BIN` (optional explicit Python executable; compose pins `/usr/local/bin/python` so host virtualenvs are never selected inside Linux)
 - `PINGTING_STATUS_MAX_AGE_SECONDS` (default: `120`)
 - `PINGTING_STATUS_TIMEOUT_SECONDS` (default: `20`)
 - `CONTROLPLANE_API_AUTH_TOKEN` (shared API token; when unset the API fails closed and returns 503)

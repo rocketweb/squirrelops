@@ -151,6 +151,17 @@ Notes:
 - This compose file expects runtime repos beside the SquirrelOps checkout; set `SQUIRRELOPS_WORKSPACE` to override that parent directory.
 - ClownPeanuts API is expected on host `:8099`.
 - PingTing data is read from the mounted `pingting` sibling repository.
+- The API image installs dependencies from that PingTing checkout at build time and uses its own Linux Python. Rebuild the image after PingTing dependency changes.
+- At startup, the API container maps its unprivileged `appuser` to the mounted PingTing repo's numeric UID/GID. This allows owner-only status snapshots and SQLite WAL access without running the API as root.
+- Root-owned PingTing checkouts and mounts that do not allow the mapped user to read config/status or write `data/` and `logs/` fail startup with an actionable error.
+
+Docker-specific verification:
+
+```bash
+./harness/controlplane-docker-smoke.sh
+```
+
+The smoke test builds the API with PingTing's dependency context, forces a live `/sentry/summary` CLI refresh, and verifies Linux-style UID/GID remapping.
 
 Default local endpoints:
 
