@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIR}/../scripts/lib/common.sh"
 
-BASE_DIR_INPUT="${1:-/Users/matt/code}"
+BASE_DIR_INPUT="${1:-${REPO_ROOT%/*}}"
 BASE_DIR="$(validate_base_dir "${BASE_DIR_INPUT}")"
 
 check_repo() {

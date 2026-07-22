@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { timingSafeEqual } from "node:crypto"
 
 // Server-side proxy (BFF) to the control-plane API.
 //
@@ -24,6 +25,32 @@ const upstreamToken = (
   ""
 ).trim()
 
+// Optional second trust boundary for deployments that expose the dashboard
+// beyond loopback. An authenticating reverse proxy can set the HttpOnly cookie,
+// or a trusted non-browser caller can send the explicit header.
+const dashboardAuthToken = (process.env.CONTROLPLANE_DASHBOARD_AUTH_TOKEN ?? "").trim()
+const dashboardAuthCookie = (
+  process.env.CONTROLPLANE_DASHBOARD_AUTH_COOKIE ?? "squirrelops_dashboard_token"
+).trim()
+
+const tokenMatches = (provided: string | undefined, expected: string): boolean => {
+  if (!provided || !expected) {
+    return false
+  }
+  const providedBytes = Buffer.from(provided)
+  const expectedBytes = Buffer.from(expected)
+  return providedBytes.length === expectedBytes.length && timingSafeEqual(providedBytes, expectedBytes)
+}
+
+const dashboardRequestIsAuthorized = (request: NextRequest): boolean => {
+  if (!dashboardAuthToken) {
+    return true
+  }
+  const cookieToken = request.cookies.get(dashboardAuthCookie)?.value
+  const headerToken = request.headers.get("x-controlplane-dashboard-token") ?? undefined
+  return tokenMatches(cookieToken, dashboardAuthToken) || tokenMatches(headerToken, dashboardAuthToken)
+}
+
 // Hop-by-hop and identity headers that must not be forwarded upstream.
 const STRIPPED_REQUEST_HEADERS = new Set([
   "host",
@@ -32,6 +59,7 @@ const STRIPPED_REQUEST_HEADERS = new Set([
   "authorization",
   "cookie",
   "x-api-key",
+  "x-controlplane-dashboard-token",
 ])
 
 const buildUpstreamUrl = (request: NextRequest): string => {
@@ -42,6 +70,13 @@ const buildUpstreamUrl = (request: NextRequest): string => {
 }
 
 const proxy = async (request: NextRequest): Promise<Response> => {
+  if (!dashboardRequestIsAuthorized(request)) {
+    return new Response(JSON.stringify({ detail: "dashboard authentication required" }), {
+      status: 401,
+      headers: { "content-type": "application/json", "www-authenticate": "Cookie" },
+    })
+  }
+
   const url = buildUpstreamUrl(request)
 
   const headers = new Headers()

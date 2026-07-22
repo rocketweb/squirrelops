@@ -149,7 +149,7 @@ After updating, run the smoke test again to confirm everything is still in order
 
 ## 6. Using a Different Base Directory
 
-By default, all scripts assume the runtime repositories live under `/Users/matt/code`. This is the sole entry in the `ALLOWED_BASE_ROOTS` list. The scripts validate the base directory against this list before performing any operations — if the directory is outside the allowed roots, the script will exit with an error.
+By default, all scripts use the parent directory containing the SquirrelOps checkout. That parent is the sole entry in the `ALLOWED_BASE_ROOTS` list. The scripts validate the base directory against this list before performing any operations — if the directory is outside the allowed roots, the script will exit with an error.
 
 To use a different base directory, you need to do two things:
 
@@ -167,7 +167,7 @@ export ALLOWED_BASE_ROOTS="/Users/matt/work,/Users/matt/code"
 
 The `ALLOWED_BASE_ROOTS` variable accepts a comma-separated list of directory prefixes. A base directory is considered valid if it equals or is a subdirectory of any entry in the list. You can include multiple roots if you work across several directory trees.
 
-Note that you need to include the original default (`/Users/matt/code`) in the list if you still want it to work as well — setting `ALLOWED_BASE_ROOTS` replaces the default rather than appending to it.
+Note that you need to include the SquirrelOps checkout's parent directory in the list if you still want the default location to work — setting `ALLOWED_BASE_ROOTS` replaces the default rather than appending to it.
 
 ## 7. Understanding the Configuration File
 
@@ -192,7 +192,7 @@ The fields are:
 
 ### "BASE_DIR ... is outside ALLOWED_BASE_ROOTS"
 
-The directory you specified (or the default `/Users/matt/code`) is not in the allowed roots list. This is the directory validation guard preventing operations in unexpected locations.
+The directory you specified (or the SquirrelOps checkout's parent directory) is not in the allowed roots list. This is the directory validation guard preventing operations in unexpected locations.
 
 **Fix:** Add your intended directory to the `ALLOWED_BASE_ROOTS` environment variable before running the script. See Section 6 above for details.
 

@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd -P)"
 APP_DIR="${REPO_ROOT}/apps/controlplane-dashboard"
 NPM_BIN="${NPM_BIN:-npm}"
 NODE_BIN="${NODE_BIN:-}"
-PORT="${CONTROLPANE_DASHBOARD_PORT:-4317}"
+PORT="${CONTROLPLANE_DASHBOARD_PORT:-${CONTROLPANE_DASHBOARD_PORT:-4317}}"
 
 if [[ -z "${NODE_BIN}" ]]; then
   NODE_BIN="$(command -v node || true)"

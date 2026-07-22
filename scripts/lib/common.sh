@@ -47,7 +47,8 @@ canonicalize_path() {
 }
 
 default_allowed_roots() {
-  local roots="/Users/matt/code"
+  local roots=""
+  roots="$(cd "${REPO_ROOT}/.." && pwd -P)"
   if [[ -n "${RUNNER_TEMP:-}" ]]; then
     roots="${roots},${RUNNER_TEMP}"
   fi

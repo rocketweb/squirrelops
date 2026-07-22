@@ -13,7 +13,7 @@ class ClownPeanutsAdapter:
         *,
         base_url: str,
         api_token: str | None = None,
-        timeout_seconds: float = 5.0,
+        timeout_seconds: float = 30.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_token = (api_token or "").strip()

@@ -76,7 +76,7 @@ cd squirrelops
 ./harness/smoke.sh
 ```
 
-The bootstrap script will clone PingTing and ClownPeanuts into sibling directories alongside SquirrelOps (by default, under `/Users/matt/code`). The smoke test confirms that each repository was cloned successfully and contains its expected entry-point file.
+The bootstrap script will clone PingTing and ClownPeanuts into sibling directories alongside SquirrelOps. The smoke test confirms that each repository was cloned successfully and contains its expected entry-point file.
 
 For a step-by-step walkthrough of setting up the workspace on macOS, including prerequisites and authentication options, see **[docs/user-guide-macos.md](docs/user-guide-macos.md)**.
 
@@ -122,6 +122,8 @@ Default launch-agent behavior:
 - label: `com.squirrelops.controlplane`
 - dashboard port: `4317`
 - API port: `8199`
+- API authentication: reuses `CONTROLPLANE_API_AUTH_TOKEN` when provided, or
+  generates a strong token and stores it in the mode-600 launch-agent plist
 - log files: `/tmp/squirrelops-controlplane.launchd.log` and `/tmp/squirrelops-controlplane.launchd.err.log`
 
 To remove boot startup:
@@ -146,9 +148,9 @@ docker compose -f docker-compose.controlplane.yml up --build
 
 Notes:
 
-- This compose file expects runtime repos at `/Users/matt/code`.
+- This compose file expects runtime repos beside the SquirrelOps checkout; set `SQUIRRELOPS_WORKSPACE` to override that parent directory.
 - ClownPeanuts API is expected on host `:8099`.
-- PingTing data is read from `/Users/matt/code/pingting`.
+- PingTing data is read from the mounted `pingting` sibling repository.
 
 Default local endpoints:
 
@@ -159,7 +161,7 @@ Default local endpoints:
 
 ### Using a Custom Base Directory
 
-By default, all scripts assume the runtime repositories live under `/Users/matt/code`. You can override this by passing a directory as the first argument:
+By default, all scripts use the parent directory containing the SquirrelOps checkout. You can override this by passing a directory as the first argument:
 
 ```bash
 ./scripts/bootstrap_repos.sh /Users/matt/work
@@ -173,7 +175,7 @@ The directory you specify must be within one of the allowed base roots (see "Sec
 
 Several guardrails are built into the scripts to prevent accidental operations on unexpected paths or repositories:
 
-- **Directory validation** — Every script validates that the requested base directory falls within `ALLOWED_BASE_ROOTS` before doing anything. This prevents the scripts from being tricked into cloning into or modifying files in arbitrary locations. The default allowed root is `/Users/matt/code`; in CI, `$RUNNER_TEMP` is also allowed.
+- **Directory validation** — Every script validates that the requested base directory falls within `ALLOWED_BASE_ROOTS` before doing anything. This prevents the scripts from being tricked into cloning into or modifying files in arbitrary locations. The default allowed root is the parent directory containing the SquirrelOps checkout; in CI, `$RUNNER_TEMP` is also allowed.
 
 - **Owner validation** — When constructing or verifying a Git remote URL, the scripts check that the GitHub owner (organization or user) is in the `ALLOWED_GITHUB_ORGS` list. The default is `rocketweb`. This prevents the scripts from operating on repositories owned by unexpected parties.
 
@@ -194,7 +196,7 @@ The bootstrap and update scripts are configured through environment variables. N
 | `PROJECTS_CONFIG` | `./config/projects.yaml` | Path to the YAML file that defines managed repositories. |
 | `CLONE_PROTOCOL` | Auto-detected: `https` in CI, `ssh` locally | Whether to clone via SSH (`git@github.com:...`) or HTTPS (`https://github.com/...`). Only `ssh` and `https` are accepted. |
 | `GH_ACCESS_TOKEN` | *(none)* | GitHub personal access token for authenticated HTTPS operations. `GITHUB_TOKEN` is also accepted. Only relevant when `CLONE_PROTOCOL=https`. |
-| `ALLOWED_BASE_ROOTS` | `/Users/matt/code` (plus `$RUNNER_TEMP` in CI) | Comma-separated list of directory prefixes that the scripts are allowed to operate in. |
+| `ALLOWED_BASE_ROOTS` | Parent directory containing SquirrelOps (plus `$RUNNER_TEMP` in CI) | Comma-separated list of directory prefixes that the scripts are allowed to operate in. |
 | `ALLOWED_GITHUB_ORGS` | `rocketweb` | Comma-separated list of GitHub owners/organizations that managed repositories are allowed to belong to. |
 | `GIT_CLONE_TIMEOUT_SEC` | `300` | Hard timeout in seconds for `git clone` operations. |
 | `GIT_FETCH_TIMEOUT_SEC` | `120` | Hard timeout in seconds for `git fetch` operations. |

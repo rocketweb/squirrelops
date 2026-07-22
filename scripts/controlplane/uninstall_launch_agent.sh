@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LABEL="${CONTROLPANE_LAUNCHD_LABEL:-com.squirrelops.controlplane}"
+LABEL="${CONTROLPLANE_LAUNCHD_LABEL:-${CONTROLPANE_LAUNCHD_LABEL:-com.squirrelops.controlplane}}"
 PLIST_PATH="${HOME}/Library/LaunchAgents/${LABEL}.plist"
 UID_VALUE="$(id -u)"
 

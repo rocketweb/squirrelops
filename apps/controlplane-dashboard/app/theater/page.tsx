@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { API_BASE, WS_THEATER_BASE, cpFetch, withApiTokenQuery } from "../lib/api"
+import { API_BASE, WS_THEATER_BASE, cpFetch, webSocketProtocols } from "../lib/api"
 import { formatAge, levelToPillClass, type HealthLevel } from "../lib/format"
 
 type TheaterTimelineRow = {
@@ -262,9 +262,8 @@ export default function TheaterPage() {
         return
       }
       ws = new WebSocket(
-        withApiTokenQuery(
-          `${WS_THEATER_BASE}?limit=120&events_per_session=250&interval_ms=${THEATER_STREAM_INTERVAL_MS}`
-        )
+        `${WS_THEATER_BASE}?limit=120&events_per_session=250&interval_ms=${THEATER_STREAM_INTERVAL_MS}`,
+        webSocketProtocols()
       )
       ws.onopen = () => {
         setConnected(true)

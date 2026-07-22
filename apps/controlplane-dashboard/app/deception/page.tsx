@@ -2,7 +2,7 @@
 
 import { scaleLinear } from "d3-scale"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { API_BASE, WS_BASE, cpFetch, withApiTokenQuery, withQueryParams } from "../lib/api"
+import { API_BASE, WS_BASE, cpFetch, webSocketProtocols, withQueryParams } from "../lib/api"
 import { formatAge, levelToPillClass, type HealthLevel } from "../lib/format"
 
 type StatusPayload = {
@@ -416,15 +416,13 @@ export default function DashboardPage() {
       if (closed) {
         return
       }
-      const wsUrl = withApiTokenQuery(
-        withQueryParams(WS_BASE, {
-          format: "batch",
-          batch_limit: "160",
-          interval_ms: "350",
-          cursor: String(streamCursorRef.current),
-        })
-      )
-      ws = new WebSocket(wsUrl)
+      const wsUrl = withQueryParams(WS_BASE, {
+        format: "batch",
+        batch_limit: "160",
+        interval_ms: "350",
+        cursor: String(streamCursorRef.current),
+      })
+      ws = new WebSocket(wsUrl, webSocketProtocols())
       ws.onopen = () => {
         setConnected(true)
         retryAttempt = 0

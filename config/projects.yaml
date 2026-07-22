@@ -2,7 +2,6 @@ projects:
   - name: pingting
     repo: git@github.com:rocketweb/pingting.git
     role: runtime
-    local_path: /Users/matt/code/pingting
     verification_key: pingting/main.py
     dashboard:
       tab: sentry
@@ -16,7 +15,6 @@ projects:
   - name: clownpeanuts
     repo: git@github.com:rocketweb/clownpeanuts.git
     role: runtime
-    local_path: /Users/matt/code/clownpeanuts
     verification_key: clownpeanuts/cli.py
     dashboard:
       tab: deception
@@ -30,7 +28,6 @@ projects:
 
 orchestration:
   name: squirrelops
-  local_path: /Users/matt/code/squirrelops
   role: umbrella
   controlplane:
     dashboard_path: apps/controlplane-dashboard

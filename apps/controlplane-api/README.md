@@ -36,7 +36,7 @@ docker build -f apps/controlplane-api/Dockerfile -t squirrelops-controlplane-api
 
 ## Environment variables
 
-- `CONTROLPLANE_WORKSPACE_ROOT` (default: `/Users/matt/code`)
+- `CONTROLPLANE_WORKSPACE_ROOT` (default: parent directory containing this repository)
 - `CONTROLPLANE_PROJECTS_CONFIG` (default: `config/projects.yaml`)
 - `CLOWNPEANUTS_API_BASE` (default: `http://127.0.0.1:8099`)
 - `CLOWNPEANUTS_API_TOKEN` (optional)
@@ -61,3 +61,9 @@ docker build -f apps/controlplane-api/Dockerfile -t squirrelops-controlplane-api
 > The control-plane variables were previously misspelled `CONTROLPANE_*` (missing
 > the second "L"). Those legacy names still work as deprecated aliases, but the
 > canonical `CONTROLPLANE_*` spelling above takes precedence and should be used.
+
+Browser WebSocket clients authenticate with two subprotocols:
+`cp-events-v1` and `cp-auth.<base64url-token>`. Query-string tokens are rejected
+so secrets do not persist in access logs. Server-side clients may continue to use
+`Authorization: Bearer` or `X-API-Key` headers. The relay sends the ClownPeanuts
+token upstream only in an `Authorization` header.

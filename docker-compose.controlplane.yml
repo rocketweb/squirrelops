@@ -1,9 +1,9 @@
 # The control plane needs the sibling repos (pingting, clownpeanuts) on a
 # shared volume. Point it at your checkout with SQUIRRELOPS_WORKSPACE, e.g.
 #   SQUIRRELOPS_WORKSPACE=~/code docker compose -f docker-compose.controlplane.yml up
-# or set it in a .env file next to this compose file. It defaults to
-# /Users/matt/code for backward compatibility. Inside the container the
-# workspace is always mounted at /workspace, so no host path leaks in.
+# or set it in a .env file next to this compose file. It defaults to the parent
+# directory containing this repository. Inside the container the workspace is
+# always mounted at /workspace, so no host path leaks in.
 services:
   controlplane-api:
     build:
@@ -30,8 +30,8 @@ services:
       # container compromise cannot reach unrelated files. SQUIRRELOPS_WORKSPACE
       # points at the host checkout; inside the container the repos live under
       # /workspace (matching CONTROLPLANE_WORKSPACE_ROOT).
-      - ${SQUIRRELOPS_WORKSPACE:-/Users/matt/code}/pingting:/workspace/pingting
-      - ${SQUIRRELOPS_WORKSPACE:-/Users/matt/code}/clownpeanuts:/workspace/clownpeanuts
+      - ${SQUIRRELOPS_WORKSPACE:-..}/pingting:/workspace/pingting
+      - ${SQUIRRELOPS_WORKSPACE:-..}/clownpeanuts:/workspace/clownpeanuts
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
@@ -47,10 +47,11 @@ services:
       # the client. Keep this in sync with the API's CONTROLPANE_API_AUTH_TOKEN.
       CONTROLPLANE_API_INTERNAL_BASE: http://controlplane-api:8199
       CONTROLPLANE_API_TOKEN: ${CONTROLPLANE_API_AUTH_TOKEN:-}
-      # The live WebSocket stream is opt-in and, by browser limitation, uses a
-      # client-visible token. Leave unset to keep all secrets off the client (the
-      # dashboard falls back to REST polling). Set NEXT_PUBLIC_CONTROLPLANE_WS_TOKEN
-      # to the API token to enable it.
+      # Optional BFF trust boundary for deployments that expose the dashboard
+      # beyond the loopback-only port mapping below.
+      CONTROLPLANE_DASHBOARD_AUTH_TOKEN: ${CONTROLPLANE_DASHBOARD_AUTH_TOKEN:-}
+      # The live WebSocket stream is opt-in and uses a client-visible subprotocol
+      # token. Leave unset to keep all secrets off the client; REST polling still works.
       NEXT_PUBLIC_CONTROLPLANE_WS: ws://127.0.0.1:8199
     depends_on:
       - controlplane-api

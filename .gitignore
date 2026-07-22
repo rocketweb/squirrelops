@@ -25,6 +25,7 @@ data/controlplane/*.json
 # Control-plane app artifacts
 apps/controlplane-dashboard/node_modules/
 apps/controlplane-dashboard/.next/
+apps/controlplane-dashboard/*.tsbuildinfo
 apps/controlplane-api/.venv/
 
 # macOS

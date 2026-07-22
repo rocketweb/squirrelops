@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 API_SCRIPT="${SCRIPT_DIR}/start_api.sh"
 DASHBOARD_SCRIPT="${SCRIPT_DIR}/start_dashboard.sh"
 
-API_LOG="${CONTROLPANE_API_LOG:-/tmp/controlplane-api.log}"
-DASHBOARD_LOG="${CONTROLPANE_DASHBOARD_LOG:-/tmp/controlplane-dashboard.log}"
+API_LOG="${CONTROLPLANE_API_LOG:-${CONTROLPANE_API_LOG:-/tmp/controlplane-api.log}}"
+DASHBOARD_LOG="${CONTROLPLANE_DASHBOARD_LOG:-${CONTROLPANE_DASHBOARD_LOG:-/tmp/controlplane-dashboard.log}}"
 
 "${API_SCRIPT}" >"${API_LOG}" 2>&1 &
 API_PID=$!

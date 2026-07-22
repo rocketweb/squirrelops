@@ -4,12 +4,10 @@
 const API_BASE = "/api/cp/deception"
 
 // WebSockets cannot be proxied by `next start`, so they connect directly to the
-// control-plane API. A browser WebSocket cannot send headers, so when the API
-// requires auth the token must travel as a query parameter and is therefore
-// visible to the client. This is opt-in: leave NEXT_PUBLIC_CONTROLPLANE_WS_TOKEN
-// unset to keep all secrets off the client (the dashboard transparently falls
-// back to REST polling through the BFF), or set it to the API token to enable
-// the live WebSocket stream and accept that it is client-visible.
+// control-plane API. Browser clients carry the opt-in token in a WebSocket
+// subprotocol so it never appears in URLs or access logs. The token is still
+// client-visible, so leave NEXT_PUBLIC_CONTROLPLANE_WS_TOKEN unset to keep all
+// secrets off the client and use REST polling through the BFF instead.
 const CONTROLPLANE_WS_BASE =
   process.env.NEXT_PUBLIC_CONTROLPLANE_WS ??
   process.env.NEXT_PUBLIC_CONTROLPANE_WS ??
@@ -25,22 +23,26 @@ const WS_AUTH_TOKEN = (
   process.env.NEXT_PUBLIC_CONTROLPANE_WS_TOKEN ??
   ""
 ).trim()
+const WS_BASE_PROTOCOL = "cp-events-v1"
+const WS_AUTH_PROTOCOL_PREFIX = "cp-auth."
 
 const cpFetch = (url: string, init?: RequestInit): Promise<Response> => fetch(url, init)
 
-const withApiTokenQuery = (url: string): string => {
-  if (!WS_AUTH_TOKEN) {
-    return url
+const encodeWebSocketToken = (token: string): string => {
+  const bytes = new TextEncoder().encode(token)
+  let binary = ""
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
   }
-  try {
-    const parsed = new URL(url)
-    if (!parsed.searchParams.has("token")) {
-      parsed.searchParams.set("token", WS_AUTH_TOKEN)
-    }
-    return parsed.toString()
-  } catch {
-    return url
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+}
+
+const webSocketProtocols = (): string[] => {
+  const protocols = [WS_BASE_PROTOCOL]
+  if (WS_AUTH_TOKEN) {
+    protocols.push(`${WS_AUTH_PROTOCOL_PREFIX}${encodeWebSocketToken(WS_AUTH_TOKEN)}`)
   }
+  return protocols
 }
 
 const withQueryParams = (url: string, params: Record<string, string>): string => {
@@ -55,4 +57,4 @@ const withQueryParams = (url: string, params: Record<string, string>): string =>
   }
 }
 
-export { API_BASE, WS_BASE, WS_THEATER_BASE, cpFetch, withApiTokenQuery, withQueryParams }
+export { API_BASE, WS_BASE, WS_THEATER_BASE, cpFetch, webSocketProtocols, withQueryParams }

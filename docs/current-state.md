@@ -288,9 +288,9 @@ Compose file:
 
 Current default assumptions in compose:
 
-- workspace root bind mount: `/Users/matt/code`
+- workspace root bind mount: the parent directory containing SquirrelOps (override with `SQUIRRELOPS_WORKSPACE`)
 - ClownPeanuts upstream reachable from container via `host.docker.internal:8099`
-- PingTing repo/data mounted/read from `/Users/matt/code/pingting`
+- PingTing repo/data mounted/read from the sibling `pingting` checkout
 - published ports:
   - dashboard `4317`
   - API `8199`

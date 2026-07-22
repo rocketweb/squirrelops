@@ -21,7 +21,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install control-plane API dependencies
-        run: pip install -r ./apps/controlplane-api/requirements.txt
+        run: pip install -r ./apps/controlplane-api/requirements-dev.txt
+
+      - name: Run control-plane API regression tests
+        run: pytest -q ./apps/controlplane-api/tests
 
       - name: Run control-plane API self-check
         env:

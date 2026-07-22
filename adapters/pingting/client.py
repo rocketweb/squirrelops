@@ -6,6 +6,7 @@ import json
 import shutil
 import sqlite3
 import subprocess
+import threading
 import time
 from typing import Any
 
@@ -53,6 +54,8 @@ def _safe_json_loads(raw: Any, default: Any) -> Any:
 class PingTingAdapter:
     """Loads PingTing status from status.json or CLI fallback."""
 
+    _CLI_RESULT_TTL_SECONDS = 1.0
+
     def __init__(
         self,
         *,
@@ -69,6 +72,11 @@ class PingTingAdapter:
         self.max_age_seconds = max_age_seconds
         self.python_bin = python_bin
         self.command_timeout_seconds = command_timeout_seconds
+        self._cli_condition = threading.Condition()
+        self._cli_running = False
+        self._cli_last_snapshot: PingTingStatusSnapshot | None = None
+        self._cli_last_error: str | None = None
+        self._cli_result_valid_until = 0.0
 
     def _resolve_python_bin(self) -> str:
         if self.python_bin:
@@ -102,7 +110,7 @@ class PingTingAdapter:
 
         return PingTingStatusSnapshot(payload=payload, source="file", age_seconds=age_seconds)
 
-    def _run_status_cli(self) -> PingTingStatusSnapshot:
+    def _execute_status_cli(self) -> PingTingStatusSnapshot:
         cmd = [
             self._resolve_python_bin(),
             "-m",
@@ -130,6 +138,49 @@ class PingTingAdapter:
 
         payload = _extract_json_payload(completed.stdout)
         return PingTingStatusSnapshot(payload=payload, source="cli", age_seconds=0.0)
+
+    def _run_status_cli(self) -> PingTingStatusSnapshot:
+        with self._cli_condition:
+            now = time.monotonic()
+            if self._cli_running:
+                finished = self._cli_condition.wait_for(
+                    lambda: not self._cli_running,
+                    timeout=float(self.command_timeout_seconds) + 1.0,
+                )
+                if not finished:
+                    raise TimeoutError("timed out waiting for in-flight pingting status command")
+                now = time.monotonic()
+
+            if now < self._cli_result_valid_until:
+                if self._cli_last_error is not None:
+                    raise RuntimeError(self._cli_last_error)
+                if self._cli_last_snapshot is not None:
+                    return self._cli_last_snapshot
+
+            self._cli_running = True
+
+        try:
+            snapshot = self._execute_status_cli()
+        except Exception as exc:
+            with self._cli_condition:
+                self._cli_last_snapshot = None
+                self._cli_last_error = str(exc)
+                self._cli_result_valid_until = time.monotonic() + self._CLI_RESULT_TTL_SECONDS
+                self._cli_running = False
+                self._cli_condition.notify_all()
+            raise
+
+        with self._cli_condition:
+            self._cli_last_snapshot = snapshot
+            self._cli_last_error = None
+            self._cli_result_valid_until = time.monotonic() + self._CLI_RESULT_TTL_SECONDS
+            self._cli_running = False
+            self._cli_condition.notify_all()
+        return snapshot
+
+    @staticmethod
+    def _connect_read_only(db_path: Path) -> sqlite3.Connection:
+        return sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
 
     def _highlights(self, payload: dict[str, Any]) -> dict[str, Any]:
         findings_24h = payload.get("findings_24h")
@@ -220,7 +271,7 @@ class PingTingAdapter:
 
         connection: sqlite3.Connection | None = None
         try:
-            connection = sqlite3.connect(str(db_path))
+            connection = self._connect_read_only(db_path)
             connection.row_factory = sqlite3.Row
             cursor = connection.execute(query, tuple(params))
             rows = cursor.fetchall()
@@ -305,7 +356,7 @@ class PingTingAdapter:
 
         connection: sqlite3.Connection | None = None
         try:
-            connection = sqlite3.connect(str(db_path))
+            connection = self._connect_read_only(db_path)
             connection.row_factory = sqlite3.Row
             cursor = connection.execute(query, tuple(params))
             rows = cursor.fetchall()

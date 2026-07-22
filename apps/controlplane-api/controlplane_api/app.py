@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 from datetime import datetime, timezone
 import hmac
 from pathlib import Path
 import sys
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +21,11 @@ if str(REPO_ROOT) not in sys.path:
 from adapters.clownpeanuts import ClownPeanutsAdapter
 from adapters.pingting import PingTingAdapter
 from .config import ControlPlaneSettings, load_settings
-from .orchestration import build_orchestration_summary, run_action
+from .orchestration import ActionAlreadyRunningError, build_orchestration_summary, run_action
+
+
+WS_BASE_PROTOCOL = "cp-events-v1"
+WS_AUTH_PROTOCOL_PREFIX = "cp-auth."
 
 
 def _now_iso() -> str:
@@ -71,24 +75,33 @@ def _resolve_websocket_token(websocket: WebSocket) -> str | None:
         token = api_key.strip()
         if token:
             return token
-    for query_key in ("token", "api_key", "access_token"):
-        token_query = websocket.query_params.get(query_key)
-        if token_query:
-            token = token_query.strip()
-            if token:
-                return token
+    protocols_header = str(websocket.headers.get("sec-websocket-protocol", "")).strip()
+    for raw_protocol in protocols_header.split(","):
+        protocol = raw_protocol.strip()
+        if not protocol.startswith(WS_AUTH_PROTOCOL_PREFIX):
+            continue
+        encoded_token = protocol[len(WS_AUTH_PROTOCOL_PREFIX) :].strip()
+        if not encoded_token:
+            continue
+        try:
+            padding = "=" * ((4 - (len(encoded_token) % 4)) % 4)
+            decoded = base64.b64decode(
+                f"{encoded_token}{padding}",
+                altchars=b"-_",
+                validate=True,
+            ).decode("utf-8", errors="strict")
+        except Exception:
+            continue
+        token = decoded.strip()
+        if token:
+            return token
     return None
 
 
-def _with_token_query(url: str, token: str) -> str:
-    if not token:
-        return url
-    split = urlsplit(url)
-    query = dict(parse_qsl(split.query, keep_blank_values=True))
-    if any(key in query for key in ("token", "api_key", "access_token")):
-        return url
-    query["token"] = token
-    return urlunsplit((split.scheme, split.netloc, split.path, urlencode(query), split.fragment))
+def _accepted_websocket_subprotocol(websocket: WebSocket) -> str | None:
+    protocols_header = str(websocket.headers.get("sec-websocket-protocol", "")).strip()
+    offered = {item.strip() for item in protocols_header.split(",") if item.strip()}
+    return WS_BASE_PROTOCOL if WS_BASE_PROTOCOL in offered else None
 
 
 def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
@@ -132,24 +145,45 @@ def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
                 await websocket.close(code=4401, reason="authentication required")
                 return
 
-        await websocket.accept()
+        await websocket.accept(subprotocol=_accepted_websocket_subprotocol(websocket))
         upstream_token = settings.clownpeanuts_ws_token
-        resolved_upstream_url = _with_token_query(upstream_url, upstream_token)
         upstream_headers: dict[str, str] = {}
         if upstream_token:
             upstream_headers["Authorization"] = f"Bearer {upstream_token}"
 
         try:
             async with websockets.connect(
-                resolved_upstream_url,
+                upstream_url,
                 additional_headers=upstream_headers or None,
             ) as upstream:
-                while True:
-                    message = await upstream.recv()
-                    if isinstance(message, bytes):
-                        await websocket.send_bytes(message)
-                    else:
-                        await websocket.send_text(message)
+                async def client_to_upstream() -> None:
+                    while True:
+                        message = await websocket.receive()
+                        if message["type"] == "websocket.disconnect":
+                            return
+                        if message.get("bytes") is not None:
+                            await upstream.send(message["bytes"])
+                        elif message.get("text") is not None:
+                            await upstream.send(message["text"])
+
+                async def upstream_to_client() -> None:
+                    while True:
+                        message = await upstream.recv()
+                        if isinstance(message, bytes):
+                            await websocket.send_bytes(message)
+                        else:
+                            await websocket.send_text(message)
+
+                pumps = {
+                    asyncio.create_task(client_to_upstream()),
+                    asyncio.create_task(upstream_to_client()),
+                }
+                done, pending = await asyncio.wait(pumps, return_when=asyncio.FIRST_COMPLETED)
+                for task in pending:
+                    task.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
+                for task in done:
+                    task.result()
         except WebSocketDisconnect:
             return
         except ConnectionClosed:
@@ -277,37 +311,38 @@ def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
     def orchestration_summary() -> dict[str, Any]:
         return build_orchestration_summary(settings)
 
+    async def execute_orchestration_action(*, action_name: str, script_path: Path) -> dict[str, Any]:
+        try:
+            return await asyncio.to_thread(
+                run_action,
+                action_name=action_name,
+                script_path=script_path,
+                base_dir=settings.workspace_root,
+                timeout_seconds=settings.orchestration_action_timeout_seconds,
+                state_path=settings.orchestration_state_path,
+            )
+        except ActionAlreadyRunningError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @app.post("/orchestration/actions/smoke")
     async def orchestration_action_smoke() -> dict[str, Any]:
-        return await asyncio.to_thread(
-            run_action,
+        return await execute_orchestration_action(
             action_name="smoke",
             script_path=settings.smoke_script_path,
-            base_dir=settings.workspace_root,
-            timeout_seconds=settings.orchestration_action_timeout_seconds,
-            state_path=settings.orchestration_state_path,
         )
 
     @app.post("/orchestration/actions/bootstrap")
     async def orchestration_action_bootstrap() -> dict[str, Any]:
-        return await asyncio.to_thread(
-            run_action,
+        return await execute_orchestration_action(
             action_name="bootstrap",
             script_path=settings.bootstrap_script_path,
-            base_dir=settings.workspace_root,
-            timeout_seconds=settings.orchestration_action_timeout_seconds,
-            state_path=settings.orchestration_state_path,
         )
 
     @app.post("/orchestration/actions/update")
     async def orchestration_action_update() -> dict[str, Any]:
-        return await asyncio.to_thread(
-            run_action,
+        return await execute_orchestration_action(
             action_name="update",
             script_path=settings.update_script_path,
-            base_dir=settings.workspace_root,
-            timeout_seconds=settings.orchestration_action_timeout_seconds,
-            state_path=settings.orchestration_state_path,
         )
 
     @app.websocket("/deception/ws/events")
@@ -326,7 +361,7 @@ def create_app(settings: ControlPlaneSettings | None = None) -> FastAPI:
 
     @app.api_route(
         "/deception/{target_path:path}",
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         include_in_schema=False,
     )
     async def deception_proxy(target_path: str, request: Request) -> Response:

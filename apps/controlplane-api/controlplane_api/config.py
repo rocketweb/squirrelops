@@ -129,7 +129,9 @@ class ControlPlaneSettings:
 
 def load_settings() -> ControlPlaneSettings:
     repo_root = Path(__file__).resolve().parents[3]
-    workspace_root = Path(os.getenv("CONTROLPLANE_WORKSPACE_ROOT", "/Users/matt/code")).expanduser()
+    workspace_root = Path(
+        os.getenv("CONTROLPLANE_WORKSPACE_ROOT", str(repo_root.parent))
+    ).expanduser()
     pingting_repo = Path(os.getenv("PINGTING_REPO_PATH", str(workspace_root / "pingting"))).expanduser()
 
     api_auth_disabled = _parse_bool_env("CONTROLPLANE_API_AUTH_DISABLED", default=False)
