@@ -30,3 +30,6 @@ apps/controlplane-api/.venv/
 
 # macOS
 .DS_Store
+
+# Sales enablement kit: internal only, never publish
+docs/enablement/
