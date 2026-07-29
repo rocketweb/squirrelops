@@ -33,3 +33,6 @@ apps/controlplane-api/.venv/
 
 # Sales enablement kit: internal only, never publish
 docs/enablement/
+
+# Internal strategy docs: pricing, COGS, open-core boundary. Never publish.
+docs/strategy/
